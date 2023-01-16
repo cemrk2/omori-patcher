@@ -611,12 +611,12 @@ namespace Mem
         return 0; // can't actually execute this
     }
 
-    void Write(DWORD_PTR addr, void* input, size_t len)
+    void Write(DWORD_PTR dst, void* src, size_t len)
     {
         DWORD old;
-        VirtualProtect((LPVOID)addr, len, PAGE_EXECUTE_READWRITE, &old);
-        memcpy((void*)addr, input, len);
-        VirtualProtect((LPVOID)addr, len, old, &old);
+        VirtualProtect((LPVOID)dst, len, PAGE_EXECUTE_READWRITE, &old);
+        memcpy((void*)dst, src, len);
+        VirtualProtect((LPVOID)dst, len, old, &old);
     }
 
     void* codecaveMalloc(int size)
