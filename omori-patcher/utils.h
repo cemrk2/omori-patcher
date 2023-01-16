@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.h"
-#include "consts.h"
 
 typedef unsigned int natural;
 
