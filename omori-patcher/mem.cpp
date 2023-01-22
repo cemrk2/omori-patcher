@@ -468,20 +468,20 @@ namespace Mem
         BYTE* post = new BYTE[47]
                 {
                         // subtract 0x0D (13) from the ret address
-                        0x49, 0x83, 0xEC, 0x0D,             // sub r12, 0x0D
+                        0x49, 0x83, 0xEC, 0x0D, // sub r12, 0x0D
 
                         // memcpy(RSI, backup, 12);
                         // RCX: _Dst
                         // RDX: _Src
                         // R8 : _Size
 
-                        0x49, 0x83, 0xEC, 0x00,             // sub r12, 0x00
-                        0x49, 0x8B, 0xCC,                   // mov rcx, r12
-                        0xBA, 0x00, 0x00, 0x00, 0x00,       // mov edx, backup
+                        0x49, 0x83, 0xC4, 0x01, // add r12, 0x01
+                        0x49, 0x8B, 0xCC, // mov rcx, r12
+                        0xBA, 0x00, 0x00, 0x00, 0x00, // mov edx, backup
                         0x41, 0xB8, 0x0B, 0x00, 0x00, 0x00, // mov r8d, 0x0B
-                        0xFF, 0x15, 0x1F, 0x73, 0x6D, 0x00, // call qword ptr ds : [0x00000001432C3450]
+                        0xFF, 0x15, 0x1F, 0x73, 0x6D, 0x00, // call qword ptr ds:[0x00000001432C3450]
 
-                        0x49, 0x83, 0xC4, 0x00,             // add r12, 0x00
+                        0x49, 0x83, 0xEC, 0x01, // sub r12, 0x01
 
                         // restore registers
                         0x5F,       // pop rdi
@@ -493,8 +493,8 @@ namespace Mem
                         0x58,       // pop rax
 
                         // Push the return address back on the stack
-                        0x41, 0x54,                         // push r12
-                        0x41, 0xBC, 0x00, 0x00, 0x00, 0x00  // mov r12d, 0
+                        0x41, 0x54, // push r12
+                        0x41, 0xBC, 0x00, 0x00, 0x00, 0x00 // mov r12d, 0
                 };
 
         memcpy((void*)((DWORD_PTR)post + 12), &result.backupPtr, 4);
