@@ -444,28 +444,34 @@ namespace Mem
     {
         DWORD _;
         void* hookBackup = malloc(12);
-        HookResult result = _hook(insn, targetFn, 50);
+        HookResult result = _hook(insn, targetFn, 60);
         memcpy((void*)hookBackup, result.trampolinePtr, 12);
 
         // Make insn to insn+50 rwx
         VirtualProtect((LPVOID)insn, 50, PAGE_EXECUTE_READWRITE, &_);
 
-        BYTE* pre = new BYTE[9]
+        BYTE* pre = new BYTE[17]
                 {
                         // Make a copy of the return address to r12
                         0x41, 0x5C,     // pop r12
 
+                        // backup used rN registers
+                        0x41, 0x50, // push r8
+                        0x41, 0x51, // push r9
+                        0x41, 0x52, // push r10
+                        0x41, 0x53, // push r11
+
                         // Backup registers
-                        0x50,    // push rax
-                        0x51,    // push rcx
-                        0x52,    // push rdx
-                        0x53,    // push rbx00000001427776F9
-                        0x55,    // push rbp
-                        0x56,    // push rsi
-                        0x57,    // push rdi
+                        0x50,       // push rax
+                        0x51,       // push rcx
+                        0x52,       // push rdx
+                        0x53,       // push rbx
+                        0x55,       // push rbp
+                        0x56,       // push rsi
+                        0x57,       // push rdi
                 };
 
-        BYTE* post = new BYTE[47]
+        BYTE* post = new BYTE[55]
                 {
                         // subtract 0x0D (13) from the ret address
                         0x49, 0x83, 0xEC, 0x0D, // sub r12, 0x0D
@@ -492,6 +498,12 @@ namespace Mem
                         0x59,       // pop rcx
                         0x58,       // pop rax
 
+                        // restore used rN registers
+                        0x41, 0x5B, // push r11
+                        0x41, 0x5A, // push r10
+                        0x41, 0x59, // push r9
+                        0x41, 0x58, // push r8
+
                         // Push the return address back on the stack
                         0x41, 0x54, // push r12
                         0x41, 0xBC, 0x00, 0x00, 0x00, 0x00 // mov r12d, 0
@@ -499,9 +511,9 @@ namespace Mem
 
         memcpy((void*)((DWORD_PTR)post + 12), &result.backupPtr, 4);
 
-        Mem::Write((DWORD_PTR)result.trampolinePtr, pre, 9);
-        Mem::Write((DWORD_PTR)result.trampolinePtr + 9, hookBackup, 12);
-        Mem::Write((DWORD_PTR)result.trampolinePtr + 21, post, 47);
+        Mem::Write((DWORD_PTR)result.trampolinePtr, pre, 17);
+        Mem::Write((DWORD_PTR)result.trampolinePtr + 17, hookBackup, 12);
+        Mem::Write((DWORD_PTR)result.trampolinePtr + 29, post, 55);
         Utils::Infof("backupPtr: 0x%p trampolinePtr: 0x%p", result.backupPtr, result.trampolinePtr);
 
     }
