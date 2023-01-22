@@ -24,7 +24,7 @@ namespace Consts {
 
     const DWORD_PTR codecave = 0x0000000142BEC100;
     const DWORD_PTR codecaveEnd = 0x0000000142BED0B5;
-    const DWORD_PTR initialEval = 0x00000001428253F4;
+    const DWORD_PTR JS_Eval = 0x00000001427776ED; // x64dbg actually thinks that this function is at: 0x1427776EC
 }
 
 namespace Utils
@@ -618,7 +618,7 @@ namespace Mem
         VirtualProtect((LPVOID)dst, len, old, &old);
     }
 
-    void* codecaveMalloc(int size)
+    void* codecaveAlloc(size_t size)
     {
         DWORD _;
         void* old = (void*) mallocI;
@@ -645,7 +645,7 @@ namespace Mem
         return code;
     }
 
-    HookResult Hook(DWORD_PTR insn, DWORD_PTR targetFn, bool restore)
+    HookResult _hook(DWORD_PTR insn, DWORD_PTR targetFn, size_t freeSpace = 100)
     {
         DWORD _;
         void* targetCall = Mem::CreateCall(targetFn);
@@ -659,7 +659,7 @@ namespace Mem
         }
 
         reader = (BYTE*)insn;
-        void* trampoline = codecaveMalloc(i + 113);
+        void* trampoline = codecaveAlloc(i + 13 + freeSpace);
         void* backup = malloc(i);
 
         Utils::Infof("Address of trampoline: %p", trampoline);
@@ -667,21 +667,92 @@ namespace Mem
         memcpy(backup, (void*)reader, i);
 
         Utils::Infof("Replacing instructions");
-        memset(trampoline, 0x90, i + 113);
+        memset(trampoline, 0x90, i + 13 + freeSpace);
         memcpy(trampoline, targetCall, 12);
-        if (restore) memcpy((void*)((DWORD_PTR)trampoline + 12), (void*)reader, i);
-        ((BYTE*)trampoline)[112 + i] = 0xC3;
+        ((BYTE*)trampoline)[12 + freeSpace + i] = 0xC3;
         VirtualProtect(trampoline, i + 12 + 1, PAGE_EXECUTE_READ, &_);
 
-        Utils::Debug((DWORD_PTR)trampoline, i + 112);
+        Utils::Infof("trampoline: %p", trampoline);
         void* trampolineCall = Mem::CreateCall((DWORD_PTR)trampoline);
-        i -= 12;
 
         Mem::Write(insn, trampolineCall, 12);
-        Utils::Infof("Adding: %d bytes of padding", i);
+        Utils::Infof("Adding: %d bytes of padding", i - 12);
+
+
+        for (size_t j = 0; j < (i-12); j++)
+        {
+            Mem::Write(insn+12+j, new BYTE[1]{ 0xCC }, 1);
+        }
+
         return {
             trampoline,
             backup
         };
+    }
+
+    void Hook(DWORD_PTR insn, DWORD_PTR targetFn)
+    {
+        DWORD _;
+        void* hookBackup = malloc(12);
+        HookResult result = _hook(insn, targetFn, 50);
+        memcpy((void*)hookBackup, result.trampolinePtr, 12);
+
+        // Make insn to insn+50 rwx
+        VirtualProtect((LPVOID)insn, 50, PAGE_EXECUTE_READWRITE, &_);
+
+        BYTE* pre = new BYTE[9]
+        {
+            // Make a copy of the return address to r12
+            0x41, 0x5C,     // pop r12
+
+            // Backup registers
+            0x50,    // push rax
+            0x51,    // push rcx
+            0x52,    // push rdx
+            0x53,    // push rbx00000001427776F9
+            0x55,    // push rbp
+            0x56,    // push rsi
+            0x57,    // push rdi
+        };
+
+        BYTE* post = new BYTE[47]
+        {
+            // subtract 0x0D (13) from the ret address
+            0x49, 0x83, 0xEC, 0x0D,             // sub r12, 0x0D
+
+            // memcpy(RSI, backup, 12);
+            // RCX: _Dst
+            // RDX: _Src
+            // R8 : _Size
+
+            0x49, 0x83, 0xEC, 0x00,             // sub r12, 0x00
+            0x49, 0x8B, 0xCC,                   // mov rcx, r12
+            0xBA, 0x00, 0x00, 0x00, 0x00,       // mov edx, backup
+            0x41, 0xB8, 0x0B, 0x00, 0x00, 0x00, // mov r8d, 0x0B
+            0xFF, 0x15, 0x1F, 0x73, 0x6D, 0x00, // call qword ptr ds : [0x00000001432C3450]
+
+            0x49, 0x83, 0xC4, 0x00,             // add r12, 0x00
+
+            // restore registers
+            0x5F,       // pop rdi
+            0x5E,       // pop rsi
+            0x5D,       // pop rbp
+            0x5B,       // pop rbx
+            0x5A,       // pop rdx
+            0x59,       // pop rcx
+            0x58,       // pop rax
+
+            // Push the ret address back on the stack
+            0x41, 0x54,                         // push r12
+            0x41, 0xBC, 0x00, 0x00, 0x00, 0x00  // mov r12d, 0
+        };
+
+        memcpy((void*)((DWORD_PTR)post + 12), &result.backupPtr, 4);
+
+        Mem::Write((DWORD_PTR)result.trampolinePtr, pre, 9);
+        Mem::Write((DWORD_PTR)result.trampolinePtr + 9, hookBackup, 12);
+        Mem::Write((DWORD_PTR)result.trampolinePtr + 21, post, 47);
+        Utils::Infof("backupPtr: 0x%p trampolinePtr: 0x%p", result.backupPtr, result.trampolinePtr);
+
     }
 }
