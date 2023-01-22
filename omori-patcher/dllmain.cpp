@@ -1,7 +1,8 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
-#include <malloc.h>
 #include "utils.h"
+#include "mem.h"
+#include "consts.h"
 
 void test()
 {
