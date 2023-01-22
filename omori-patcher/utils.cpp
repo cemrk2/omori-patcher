@@ -44,12 +44,12 @@ namespace Utils
                 if (fileDescriptor != -1)
                 {
                     FILE* file = _fdopen(fileDescriptor, "r");
-                    if (file != NULL)
+                    if (file != nullptr)
                     {
                         int dup2Result = _dup2(_fileno(file), _fileno(stdin));
                         if (dup2Result == 0)
                         {
-                            setvbuf(stdin, NULL, _IONBF, 0);
+                            setvbuf(stdin, nullptr, _IONBF, 0);
                         }
                     }
                 }
@@ -66,12 +66,12 @@ namespace Utils
                 if (fileDescriptor != -1)
                 {
                     FILE* file = _fdopen(fileDescriptor, "w");
-                    if (file != NULL)
+                    if (file != nullptr)
                     {
                         int dup2Result = _dup2(_fileno(file), _fileno(stdout));
                         if (dup2Result == 0)
                         {
-                            setvbuf(stdout, NULL, _IONBF, 0);
+                            setvbuf(stdout, nullptr, _IONBF, 0);
                         }
                     }
                 }
@@ -88,12 +88,12 @@ namespace Utils
                 if (fileDescriptor != -1)
                 {
                     FILE* file = _fdopen(fileDescriptor, "w");
-                    if (file != NULL)
+                    if (file != nullptr)
                     {
                         int dup2Result = _dup2(_fileno(file), _fileno(stderr));
                         if (dup2Result == 0)
                         {
-                            setvbuf(stderr, NULL, _IONBF, 0);
+                            setvbuf(stderr, nullptr, _IONBF, 0);
                         }
                     }
                 }

@@ -308,7 +308,7 @@ namespace Mem
                         goto error;
                 } // switch
 
-                // ALL THE THE REST OF THE INSTRUCTIONS; these are instructions that runtime system shouldn't ever use
+                // ALL THE REST OF THE INSTRUCTIONS; these are instructions that runtime system shouldn't ever use
             default:
                 /* case 0x26: case 0x36: // ES: SS: prefixes
                    case 0x9A:
@@ -492,7 +492,7 @@ namespace Mem
                         0x59,       // pop rcx
                         0x58,       // pop rax
 
-                        // Push the ret address back on the stack
+                        // Push the return address back on the stack
                         0x41, 0x54,                         // push r12
                         0x41, 0xBC, 0x00, 0x00, 0x00, 0x00  // mov r12d, 0
                 };
