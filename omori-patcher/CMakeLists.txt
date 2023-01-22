@@ -1,12 +1,5 @@
-# CMakeList.txt : CMake project for CMakeProjectTest, include source and define
-# project specific logic here.
-#
-
-# Add source to this project's executable.
-add_library (omori-patcher SHARED "framework.h" "pch.h" "pch.cpp" "dllmain.cpp" "utils.cpp" "utils.h" mem.cpp mem.h consts.h)
+add_library (omori-patcher SHARED framework.h pch.h pch.cpp dllmain.cpp utils.cpp utils.h mem.cpp mem.h consts.h)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET omori-patcher PROPERTY CXX_STANDARD 20)
 endif()
-
-# TODO: Add tests and install targets if needed.
