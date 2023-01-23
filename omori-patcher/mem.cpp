@@ -444,13 +444,13 @@ namespace Mem
     {
         DWORD _;
         void* hookBackup = malloc(12);
-        HookResult result = _hook(insn, targetFn, 60);
+        HookResult result = _hook(insn, targetFn, 180);
         memcpy((void*)hookBackup, result.trampolinePtr, 12);
 
         // Make insn to insn+50 rwx
         VirtualProtect((LPVOID)insn, 50, PAGE_EXECUTE_READWRITE, &_);
 
-        BYTE* pre = new BYTE[17]
+        BYTE* pre = new BYTE[62]
                 {
                         // Make a copy of the return address to r12
                         0x41, 0x5C,     // pop r12
@@ -469,9 +469,25 @@ namespace Mem
                         0x55,       // push rbp
                         0x56,       // push rsi
                         0x57,       // push rdi
+
+                        // Backup xmm0 to xmm4
+                        0x83, 0xEC, 0x10, // sub esp, 0x10
+                        0x67, 0xF3, 0x0F, 0x7F, 0x04, 0x24, // movdqu xmmword ptr [esp], xmm0
+
+                        0x83, 0xEC, 0x10, // sub esp, 0x10
+                        0x67, 0xF3, 0x0F, 0x7F, 0x0C, 0x24, // movdqu xmmword ptr [esp], xmm1
+
+                        0x83, 0xEC, 0x10, // sub esp, 0x10
+                        0x67, 0xF3, 0x0F, 0x7F, 0x14, 0x24, // movdqu xmmword ptr [esp], xmm2
+
+                        0x83, 0xEC, 0x10, // sub esp, 0x10
+                        0x67, 0xF3, 0x0F, 0x7F, 0x1C, 0x24, // movdqu xmmword ptr [esp], xmm3
+
+                        0x83, 0xEC, 0x10, // sub esp, 0x10
+                        0x67, 0xF3, 0x0F, 0x7F, 0x24, 0x24, // movdqu xmmword ptr [esp], xmm4
                 };
 
-        BYTE* post = new BYTE[55]
+        BYTE* post = new BYTE[100]
                 {
                         // subtract 0x0D (13) from the ret address
                         0x49, 0x83, 0xEC, 0x0D, // sub r12, 0x0D
@@ -485,9 +501,25 @@ namespace Mem
                         0x49, 0x8B, 0xCC, // mov rcx, r12
                         0xBA, 0x00, 0x00, 0x00, 0x00, // mov edx, backup
                         0x41, 0xB8, 0x0B, 0x00, 0x00, 0x00, // mov r8d, 0x0B
-                        0xFF, 0x15, 0x1F, 0x73, 0x6D, 0x00, // call qword ptr ds:[0x00000001432C3450]
+                        0xFF, 0x15, 0xEA, 0x72, 0x6D, 0x00, // call qword ptr ds:[0x00000001432C3450]
 
                         0x49, 0x83, 0xEC, 0x01, // sub r12, 0x01
+
+                        // restore xmm registers
+                        0x67, 0xF3, 0x0F, 0x6F, 0x24, 0x24, // movdqu xmm4, xmmword ptr [esp]
+                        0x83, 0xC4, 0x10, // add esp, 0x10
+
+                        0x67, 0xF3, 0x0F, 0x6F, 0x1C, 0x24, // movdqu xmm3, xmmword ptr [esp]
+                        0x83, 0xC4, 0x10, // add esp, 0x10
+
+                        0x67, 0xF3, 0x0F, 0x6F, 0x14, 0x24, // movdqu xmm2, xmmword ptr [esp]
+                        0x83, 0xC4, 0x10, // add esp, 0x10
+
+                        0x67, 0xF3, 0x0F, 0x6F, 0x0C, 0x24, // movdqu xmm1, xmmword ptr [esp]
+                        0x83, 0xC4, 0x10, // add esp, 0x10
+
+                        0x67, 0xF3, 0x0F, 0x6F, 0x04, 0x24, // movdqu xmm0, xmmword ptr [esp]
+                        0x83, 0xC4, 0x10, // add esp, 0x10
 
                         // restore registers
                         0x5F,       // pop rdi
@@ -511,9 +543,9 @@ namespace Mem
 
         memcpy((void*)((DWORD_PTR)post + 12), &result.backupPtr, 4);
 
-        Mem::Write((DWORD_PTR)result.trampolinePtr, pre, 17);
-        Mem::Write((DWORD_PTR)result.trampolinePtr + 17, hookBackup, 12);
-        Mem::Write((DWORD_PTR)result.trampolinePtr + 29, post, 55);
+        Mem::Write((DWORD_PTR)result.trampolinePtr, pre, 62);
+        Mem::Write((DWORD_PTR)result.trampolinePtr + 62, hookBackup, 12);
+        Mem::Write((DWORD_PTR)result.trampolinePtr + 74, post, 100);
         Utils::Infof("backupPtr: 0x%p trampolinePtr: 0x%p", result.backupPtr, result.trampolinePtr);
 
     }
