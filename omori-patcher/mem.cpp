@@ -376,7 +376,7 @@ namespace Mem
         mallocI += size;
         if (mallocI > Consts::codecaveEnd)
         {
-            Utils::Error("codecaveMalloc: No more free space in codecave");
+            Utils::Error("codecaveAlloc: No more free space in codecave");
             return nullptr;
         }
         return old;
@@ -444,7 +444,7 @@ namespace Mem
     {
         DWORD _;
         void* hookBackup = malloc(12);
-        HookResult result = _hook(insn, targetFn, 180);
+        HookResult result = _hook(insn, targetFn, 150);
         memcpy((void*)hookBackup, result.trampolinePtr, 12);
 
         // Make insn to insn+50 rwx
