@@ -410,11 +410,11 @@ namespace Mem
 
         reader = (BYTE*)insn;
         void* trampoline = codecaveAlloc(i + 13 + freeSpace);
-        void* backup = malloc(i);
+        void* backup = malloc(i + 2);
 
         Utils::Infof("Address of trampoline: %p", trampoline);
         Utils::Infof("Backing up: %d bytes", i);
-        memcpy(backup, (void*)reader, i);
+        memcpy(backup, (void*)reader, i + 2);
 
         Utils::Infof("Replacing instructions");
         memset(trampoline, 0x90, i + 13 + freeSpace);
@@ -500,7 +500,7 @@ namespace Mem
                         0x49, 0x83, 0xC4, 0x01, // add r12, 0x01
                         0x49, 0x8B, 0xCC, // mov rcx, r12
                         0xBA, 0x00, 0x00, 0x00, 0x00, // mov edx, backup
-                        0x41, 0xB8, 0x0B, 0x00, 0x00, 0x00, // mov r8d, 0x0B
+                        0x41, 0xB8, 0x0C, 0x00, 0x00, 0x00, // mov r8d, 0x0C
                         0xFF, 0x15, 0xEA, 0x72, 0x6D, 0x00, // call qword ptr ds:[0x00000001432C3450]
 
                         0x49, 0x83, 0xEC, 0x01, // sub r12, 0x01
