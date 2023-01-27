@@ -4,9 +4,9 @@
 #include "mem.h"
 #include "consts.h"
 
-void test()
+void JS_EvalHook(void* ctx, char* input, int input_len)
 {
-    Utils::Info("hi");
+    Utils::Infof("JSContext* ctx = 0x%p, input=%s, input_len=%d", ctx, input, input_len);
 }
 
 void PatcherMain()
@@ -20,7 +20,7 @@ void PatcherMain()
     Utils::Success("DLL Successfully loaded!");
     Utils::Debug(Consts::JS_Eval, 20);
     
-    Mem::Hook(Consts::JS_Eval, (DWORD_PTR) &test);
+    Mem::Hook(Consts::JS_Eval, (DWORD_PTR) &JS_EvalHook);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
