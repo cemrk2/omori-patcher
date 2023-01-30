@@ -76,6 +76,7 @@ namespace Mem
             case 0x6A:
             case 0xB0: case 0xB1: case 0xB2: case 0xB3: case 0xB4: case 0xB5: case 0xB6: case 0xB7:
             case 0xC2:
+            case 0x63: // movsxd
                 return length + 2;
 
                 // TWO BYTE RELATIVE BRANCH
