@@ -385,31 +385,38 @@ namespace Mem
 
     void* CreateCall(DWORD_PTR addr)
     {
-        void* code = new BYTE[12]
+        void* code = new BYTE[13]
                 {
+                        0x50, // push rax
                         0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov rax, ...
                         0xFF, 0xD0  // call rax
                 };
 
-        memcpy((void*)((DWORD_PTR)code + 2), &addr, 8);
+        memcpy((void*)((DWORD_PTR)code + 3), &addr, 8);
 
         return code;
     }
 
-    HookResult _hook(DWORD_PTR insn, DWORD_PTR targetFn, size_t freeSpace = 100)
+    size_t CalculatePaddedLength(DWORD_PTR insn)
     {
-        DWORD _;
-        void* targetCall = Mem::CreateCall(targetFn);
         BYTE* reader = (BYTE*)insn;
         size_t i = 0;
 
-        for (; i < 12; i += Mem::InstructionLength(reader))
+        for (; i < 13; i += Mem::InstructionLength(reader))
         {
             reader = (BYTE*)(insn + i);
-            Utils::Infof("%p %X %d %d", reader, (*reader) & 0xFF, i, Mem::InstructionLength(reader));
+            Utils::Infof("At: 0x%p insn: %X i=%d i += %d", reader, (*reader) & 0xFF, i, Mem::InstructionLength(reader));
         }
+        return i;
+    }
 
-        reader = (BYTE*)insn;
+    HookResult _hook(DWORD_PTR insn, DWORD_PTR targetFn, BYTE restoreLen, size_t freeSpace = 100)
+    {
+        DWORD _;
+        void* targetCall = Mem::CreateCall(targetFn);
+        size_t i = CalculatePaddedLength(insn);
+
+        BYTE* reader = (BYTE*)insn;
         void* trampoline = codecaveAlloc(i + 13 + freeSpace);
         void* backup = malloc(i + 2);
 
@@ -419,34 +426,36 @@ namespace Mem
 
         Utils::Infof("Replacing instructions");
         memset(trampoline, 0x90, i + 13 + freeSpace);
-        memcpy(trampoline, targetCall, 12);
-        ((BYTE*)trampoline)[12 + freeSpace + i] = 0xC3;
-        VirtualProtect(trampoline, i + 12 + 1, PAGE_EXECUTE_READ, &_);
+        memcpy(trampoline, targetCall, 13);
+        ((BYTE*)trampoline)[13 + freeSpace + i] = 0xC3;
+        VirtualProtect(trampoline, i + 13 + 1, PAGE_EXECUTE_READ, &_);
 
         Utils::Infof("trampoline: %p", trampoline);
         void* trampolineCall = Mem::CreateCall((DWORD_PTR)trampoline);
 
-        Mem::Write(insn, trampolineCall, 12);
-        Utils::Infof("Adding: %d bytes of padding", i - 12);
+        Mem::Write(insn, trampolineCall, 13);
+        Utils::Infof("Adding: %d bytes of padding", i - 13);
 
 
-        for (size_t j = 0; j < (i-12); j++)
+        for (size_t j = 0; j < (i-13); j++)
         {
-            Mem::Write(insn+12+j, new BYTE[1]{ 0xCC }, 1);
+            Mem::Write(insn+13+j, new BYTE[1]{ 0xCC }, 1);
         }
 
         return {
                 trampoline,
-                backup
+                backup,
+                i,
         };
     }
 
-    void Hook(DWORD_PTR insn, DWORD_PTR targetFn)
+    HookResult HookOnce(DWORD_PTR insn, DWORD_PTR targetFn, BYTE restoreLen)
     {
+        // TODO: Make sure HookOnce works with non 13 aligned instructions
         DWORD _;
-        void* hookBackup = malloc(12);
-        HookResult result = _hook(insn, targetFn, 150);
-        memcpy((void*)hookBackup, result.trampolinePtr, 12);
+        void* hookBackup = malloc(restoreLen);
+        HookResult result = _hook(insn, targetFn, restoreLen, 157);
+        memcpy((void*)hookBackup, result.trampolinePtr, restoreLen);
 
         // Make insn to insn+50 rwx
         VirtualProtect((LPVOID)insn, 50, PAGE_EXECUTE_READWRITE, &_);
@@ -488,23 +497,24 @@ namespace Mem
                         0x67, 0xF3, 0x0F, 0x7F, 0x24, 0x24, // movdqu xmmword ptr [esp], xmm4
                 };
 
-        BYTE* post = new BYTE[100]
+        BYTE* post = new BYTE[106]
                 {
                         // subtract 0x0D (13) from the ret address
-                        0x49, 0x83, 0xEC, 0x0D, // sub r12, 0x0D
+                        0x49, 0x83, 0xEC, restoreLen, // sub r12, subOffset
 
-                        // memcpy(RSI, backup, 12);
+                        // memcpy(r12, backup, 13);
                         // RCX: _Dst
                         // RDX: _Src
                         // R8 : _Size
 
-                        0x49, 0x83, 0xC4, 0x01, // add r12, 0x01
+                        0x49, 0x83, 0xC4, static_cast<BYTE>(restoreLen - 0x0D), // add r12, subOffset - 0x0D
                         0x49, 0x8B, 0xCC, // mov rcx, r12
                         0xBA, 0x00, 0x00, 0x00, 0x00, // mov edx, backup
-                        0x41, 0xB8, 0x0C, 0x00, 0x00, 0x00, // mov r8d, 0x0C
-                        0xFF, 0x15, 0xEA, 0x72, 0x6D, 0x00, // call qword ptr ds:[0x00000001432C3450]
+                        0x41, 0xB8, restoreLen, 0x00, 0x00, 0x00, // mov r8d, 0x0D
+                        0x48, 0xB8, 0x50, 0x34, 0x2C, 0x43, 0x01, 0x00, 0x00, 0x00, // mov rax, 0x00000001432C3450 <omori.&memcpy>
+                        0xFF, 0x10, // call qword ptr ds:[rax]
 
-                        0x49, 0x83, 0xEC, 0x01, // sub r12, 0x01
+                        0x49, 0x83, 0xEC, static_cast<BYTE>(restoreLen - 0x0D), // sub r12, subOffset - 0x0D
 
                         // restore xmm registers
                         0x67, 0xF3, 0x0F, 0x6F, 0x24, 0x24, // movdqu xmm4, xmmword ptr [esp]
@@ -545,9 +555,43 @@ namespace Mem
         memcpy((void*)((DWORD_PTR)post + 12), &result.backupPtr, 4);
 
         Mem::Write((DWORD_PTR)result.trampolinePtr, pre, 62);
-        Mem::Write((DWORD_PTR)result.trampolinePtr + 62, hookBackup, 12);
-        Mem::Write((DWORD_PTR)result.trampolinePtr + 74, post, 100);
+        Mem::Write((DWORD_PTR)result.trampolinePtr + 62, hookBackup, 13);
+        Mem::Write((DWORD_PTR)result.trampolinePtr + 75, post, 106);
         Utils::Infof("backupPtr: 0x%p trampolinePtr: 0x%p", result.backupPtr, result.trampolinePtr);
-
+        return result;
     }
+
+    void Hook(DWORD_PTR insn, DWORD_PTR targetFn)
+    {
+        void* backup = malloc(13);
+        void* hookRestore = codecaveAlloc(36);
+
+        Utils::Infof("void* backup = %p", backup);
+
+        memcpy(hookRestore, (void*) new BYTE[36]
+                {
+                        // memcpy(r12 - 0x0F, backup, 12);
+                        // RCX: _Dst
+                        // RDX: _Src
+                        // R8 : _Size
+
+                        0x49, 0x8B, 0xCC, // mov, rcx, r12
+                        0x48, 0x83, 0xE9, 0x18, // sub rcx, 0x18
+                        0x48, 0xBA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov, rdx, backup
+                        0x41, 0xB8, 0x0C, 0x00, 0x00, 0x00, // mov r8d, 0x0C
+                        0x48, 0xB8, 0x50, 0x34, 0x2C, 0x43, 0x01, 0x00, 0x00, 0x00, // mov rax, 0x00000001432C3450 <omori.&memcpy>
+                        0xFF, 0x10, // call qword ptr ds:[rax]
+                        0xC3, // ret
+        }, 36);
+
+        memcpy((void*)((DWORD_PTR)hookRestore + 9), &backup, 8);
+
+        DWORD_PTR nextInsn = insn + CalculatePaddedLength(insn);
+        HookOnce(nextInsn, (DWORD_PTR) hookRestore, 0x0D);
+        Utils::Infof("hookRestore: 0x%p", hookRestore);
+
+        HookOnce(insn, targetFn, 0x0D);
+        memcpy(backup, (void*) insn, 13);
+    }
+
 }

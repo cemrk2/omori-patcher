@@ -19,7 +19,7 @@ void PatcherMain()
 
     Utils::Success("DLL Successfully loaded!");
     Utils::Debug(Consts::JS_Eval, 20);
-    
+
     Mem::Hook(Consts::JS_Eval, (DWORD_PTR) &JS_EvalHook);
 }
 
