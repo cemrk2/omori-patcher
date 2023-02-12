@@ -7,6 +7,7 @@ project ("omori-patcher")
 
 # Register Zydis dependency.
 # Disable build of tools and examples.
+option(ZYDIS_BUILD_DOXYGEN "" OFF)
 option(ZYDIS_BUILD_TOOLS "" OFF)
 option(ZYDIS_BUILD_EXAMPLES "" OFF)
 
