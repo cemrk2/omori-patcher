@@ -8,7 +8,8 @@ struct HookResult
 {
     void* trampolinePtr;
     void* backupPtr;
-    size_t paddedLength;
+    size_t size;
+    size_t padding;
 };
 
 static DWORD_PTR mallocI = Consts::codecave;
@@ -17,6 +18,6 @@ namespace Mem
 {
     void Write(DWORD_PTR addr, void* input, size_t len);
     void* CreateCall(DWORD_PTR addr);
-    HookResult HookOnce(DWORD_PTR insn, DWORD_PTR targetFn, BYTE restoreLen);
-    void Hook(DWORD_PTR insn, DWORD_PTR targetFn);
+    HookResult HookOnce(DWORD_PTR targetInsn, DWORD_PTR hookFn);
+    void Hook(DWORD_PTR targetInsn, DWORD_PTR hookFn);
 }

@@ -18,9 +18,8 @@ void PatcherMain()
     Utils::BindCrtHandlesToStdHandles(true, true, true);
 
     Utils::Success("DLL Successfully loaded!");
-    Utils::Debug(Consts::JS_Eval, 20);
 
-    Mem::Hook(Consts::JS_Eval, (DWORD_PTR) &JS_EvalHook);
+    Mem::HookOnce(Consts::JS_Eval, (DWORD_PTR) &JS_EvalHook);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)

@@ -8,7 +8,11 @@ namespace Consts {
     const int ERR = 12;
     const int WARN = 14;
 
+    const DWORD_PTR OMORI_BASE = 0x0000000140000000;
     const DWORD_PTR codecave = 0x0000000142BEC100;
     const DWORD_PTR codecaveEnd = 0x0000000142BED0B5;
     const DWORD_PTR JS_Eval = 0x00000001427776EC+1;
+
+    // function offsets
+    const DWORD_PTR memcpy = 0x00000001432C3450;
 }
