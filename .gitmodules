@@ -1,3 +1,6 @@
 [submodule "libs/zydis"]
 	path = libs/zydis
 	url = https://github.com/zyantific/zydis/
+[submodule "libs/zasm"]
+	path = libs/zasm
+	url = https://github.com/zyantific/zasm

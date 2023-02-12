@@ -10,7 +10,5 @@ project ("omori-patcher")
 option(ZYDIS_BUILD_TOOLS "" OFF)
 option(ZYDIS_BUILD_EXAMPLES "" OFF)
 
-add_subdirectory("libs/zydis")
-
-# Include sub-projects.
+add_subdirectory("libs/zasm")
 add_subdirectory ("omori-patcher")
