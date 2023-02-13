@@ -1,4 +1,4 @@
-<$chowdren.2BEBFEF>
+<$chowdren.2BEC55F>
 	@codecave:
 		sub rsp, 0x28								; instruction overwritten by "call codecave"
 		; nop
@@ -9,12 +9,15 @@
 		push rcx
 		push rdx
 		push rsp
+		push rbp
 
-		push 0x00									; push two nullbytes to make sure nothing important gets overwritten
-		push 0x00
-		
+		push rbp
+		push rbp
+
+		mov rbp, rsp
+
 		mov rcx, 0x11								; allocate 0x11 (17) bytes
-		call qword ptr ds:[0x00000001432C3AB8]		; malloc(17);
+		call qword ptr ds:[0x00007FF7A5D43AB8]		; malloc(17);
 
 		mov qword ptr ds:[rax], 0x6F				; 'o'
 		mov qword ptr ds:[rax+0x1], 0x6D			; 'm'
@@ -36,20 +39,17 @@
 		mov qword ptr ds:[rax+0x11], 0x00			; terminating nullbyte
 
 		mov rcx, rax
-		call qword ptr ds:[0x00000001432C2598]		; LoadLibraryA("omori-patcher.dll");
+		call qword ptr ds:[0x00007FF7A5D42598]		; LoadLibraryA("omori-patcher.dll");
 
-		pop rax										; pop the first two zeros from stack that we have added
-		pop rax
+		mov rsp, rbp
 
+		pop rbp
+		pop rbp
+
+		pop rbp
+		pop rsp
 		pop rdx										; restore the values of the registers from the stack
 		pop rcx
 		pop rbx
 		pop rax
-
-		pop rbx										; pop the 6 nulls from stack
-		pop rbx
-		pop rbx
-		pop rbx
-		pop rbx
-		pop rbx
-		ret
+		jmp 0x00007FF7A56093A1
