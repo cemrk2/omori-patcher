@@ -18,6 +18,6 @@ namespace Mem
 {
     void Write(DWORD_PTR addr, void* input, size_t len);
     void* CreateCall(DWORD_PTR addr);
-    HookResult HookOnce(DWORD_PTR targetInsn, DWORD_PTR hookFn);
+    HookResult HookOnce(DWORD_PTR targetInsn, int offset, DWORD_PTR hookFn);
     void Hook(DWORD_PTR targetInsn, DWORD_PTR hookFn);
 }

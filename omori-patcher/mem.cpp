@@ -4,7 +4,6 @@
 #include "zasm/program/program.hpp"
 #include "zasm/x86/assembler.hpp"
 #include "zasm/serialization/serializer.hpp"
-#include "zasm/x86/x86.hpp"
 #include <Zydis/Zydis.h>
 
 namespace Mem
@@ -81,7 +80,7 @@ namespace Mem
         return i;
     }
 
-    HookResult createCall(DWORD_PTR targetInsn, DWORD_PTR targetFn, bool restorePerms)
+    HookResult createCall(DWORD_PTR targetInsn, int offset, DWORD_PTR targetFn, bool restorePerms)
     {
         zasm::Program program(zasm::MachineMode::AMD64);
         zasm::x86::Assembler a(program);
@@ -90,7 +89,7 @@ namespace Mem
         a.call(zasm::Imm64(targetFn));
 
         zasm::Serializer serializer{};
-        auto res = serializer.serialize(program, targetInsn);
+        auto res = serializer.serialize(program, (int64_t) targetInsn+offset);
         if (res != zasm::Error::None)
         {
             Utils::Errorf("createCall: Failed to serialize program %s", getErrorName(res));
@@ -98,17 +97,17 @@ namespace Mem
         }
 
         size_t size = serializer.getCodeSize();
-        size_t padding = getPaddedLength(targetInsn, size) - size;
+        size_t padding = getPaddedLength(targetInsn+offset, size) - size;
         void* backup = malloc(size + padding);
-        memcpy(backup, (void*) targetInsn, size + padding);
+        memcpy(backup, (void*) (targetInsn+offset), size + padding);
         DWORD permBackup;
-        VirtualProtect((LPVOID) targetInsn, size + padding, PAGE_EXECUTE_READWRITE, &permBackup);
-        memset((void*) targetInsn, 0xCC, size + padding); // add int3 padding
+        VirtualProtect((LPVOID) (targetInsn+offset), size + padding, PAGE_EXECUTE_READWRITE, &permBackup);
+        memset((void*) (targetInsn+offset), 0xCC, size + padding); // add int3 padding
 
-        memcpy((void*) targetInsn, serializer.getCode(), size);
-        Utils::Infof("%p (%d %d)", targetInsn, size, padding);
+        memcpy((void*) (targetInsn+offset), serializer.getCode(), size);
+        Utils::Infof("%p+%d (%d %d)", targetInsn, offset, size, padding);
 
-        if (restorePerms) VirtualProtect((LPVOID) targetInsn, size + padding, permBackup, &permBackup);
+        if (restorePerms) VirtualProtect((LPVOID) (targetInsn+offset), size + padding, permBackup, &permBackup);
 
         return HookResult
         {
@@ -119,9 +118,11 @@ namespace Mem
         };
     }
 
-    HookResult HookOnce(DWORD_PTR targetInsn, DWORD_PTR hookFn)
+    HookResult HookOnce(DWORD_PTR targetInsn, int offset, DWORD_PTR hookFn)
     {
-        auto hookRes = createCall(targetInsn, (DWORD_PTR) mallocI, false);
+        auto hookRes = createCall(targetInsn, offset, (DWORD_PTR) mallocI, false);
+
+        Utils::Infof("backup: %p", hookRes.backupPtr);
 
         zasm::Program program(zasm::MachineMode::AMD64);
         zasm::x86::Assembler a(program);
@@ -142,17 +143,23 @@ namespace Mem
         a.push(r13);
         a.push(r14);
         a.push(r15);
+        a.push(rsp);
 
-        a.sub(rsp, 8);
-        a.mov(r9, zasm::Imm64(targetInsn));
-        a.mov(rcx, r9);
+        a.sub(rsp, 32);
+
+        a.mov(r15, zasm::Imm64(hookFn));
+        a.call(r15);
+
+        a.mov(rcx, zasm::Imm64(targetInsn+offset));
         a.mov(rdx, zasm::Imm64((DWORD_PTR) hookRes.backupPtr));
         a.mov(r8, zasm::Imm64(hookRes.size + hookRes.padding));
-        a.mov(rax, zasm::Imm64((DWORD_PTR) Write));
+        a.mov(rax, zasm::Imm64((DWORD_PTR) memcpy));
         a.call(rax);
-        a.add(rsp, 24);
+
+        a.add(rsp, 32);
 
         // Restore the original register values
+        a.pop(rsp);
         a.pop(r15);
         a.pop(r14);
         a.pop(r13);
@@ -169,20 +176,11 @@ namespace Mem
         a.pop(rbx);
         a.pop(rax);
 
-        a.push(rax);
-        a.mov(rax, targetInsn);
-        a.add(rsp, 8); // This is really hacky, but it *works*
-        a.mov(qword_ptr(rsp), rax);
-        a.sub(rsp, 8);
-        a.pop(rax);
-        a.ret();
-
-        Utils::Infof("%p", targetInsn);
-
-        // a.mov(qword_ptr(rsp), targetInsn);
+        a.add(rsp, 8);
+        a.jmp(targetInsn);
 
         zasm::Serializer serializer{};
-        auto res = serializer.serialize(program, mallocI);
+        auto res = serializer.serialize(program, (int64_t) mallocI);
         if (res != zasm::Error::None)
         {
             Utils::Errorf("HookOnce: Failed to serialize program %s", getErrorName(res));
