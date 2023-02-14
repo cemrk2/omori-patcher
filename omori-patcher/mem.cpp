@@ -189,7 +189,7 @@ namespace Mem
             a.add(rsp, 16);
         }
 
-        a.add(rsp, 8);
+        a.add(rsp, 16);
         a.jmp(targetInsn);
 
         zasm::Serializer serializer{};
