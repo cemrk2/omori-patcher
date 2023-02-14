@@ -1,4 +1,4 @@
-<$chowdren.2BEC55F>
+<$chowdrennodyb.2BEC55F>
 	@codecave:
 		sub rsp, 0x28								; instruction overwritten by "call codecave"
 		; nop
@@ -17,7 +17,7 @@
 		mov rbp, rsp
 
 		mov rcx, 0x11								; allocate 0x11 (17) bytes
-		call qword ptr ds:[0x00007FF7A5D43AB8]		; malloc(17);
+		call qword ptr ds:[0x00000001432C3AB8]		; malloc(17);
 
 		mov qword ptr ds:[rax], 0x6F				; 'o'
 		mov qword ptr ds:[rax+0x1], 0x6D			; 'm'
@@ -39,7 +39,7 @@
 		mov qword ptr ds:[rax+0x11], 0x00			; terminating nullbyte
 
 		mov rcx, rax
-		call qword ptr ds:[0x00007FF7A5D42598]		; LoadLibraryA("omori-patcher.dll");
+		call qword ptr ds:[0x00000001432C2598]		; LoadLibraryA("omori-patcher.dll");
 
 		mov rsp, rbp
 
@@ -52,4 +52,11 @@
 		pop rcx
 		pop rbx
 		pop rax
-		jmp 0x00007FF7A56093A1
+		jmp 0x0000000142B8939C
+
+<$chowdrennodyb.2B8939C>
+
+	jmp @codecave
+	nop
+	nop
+	nop
