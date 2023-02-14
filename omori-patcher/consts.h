@@ -9,7 +9,7 @@ namespace Consts {
     const int WARN = 14;
 
     const DWORD_PTR OMORI_BASE = 0x0000000140000000;
-    const DWORD_PTR codecave = 0x0000000142BEC621;
+    const DWORD_PTR codecave = 0x0000000142BEC625;
     const DWORD_PTR codecaveEnd = 0x0000000142BED625;
 
 

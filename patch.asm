@@ -1,8 +1,7 @@
 <$chowdrennodyb.2BEC55F>
 	@codecave:
-		sub rsp, 0x28								; instruction overwritten by "call codecave"
-		; nop
-		; jmp 0x00007FF6FEB3BFF3					; infinite loop for debugging, no longer needed
+
+		sub rsp, 0x28
 
 		push rax									; push the values of the registers on to the stack
 		push rbx
@@ -52,11 +51,15 @@
 		pop rcx
 		pop rbx
 		pop rax
+
+		add rsp, 0x28
+
 		jmp 0x0000000142B893A1
 
 <$chowdrennodyb.2B8939C>
 
 	jmp @codecave
-	nop
-	nop
-	nop
+	sub rsp, 0x28
+	call 0x000000014000C9FF
+	add rsp, 0x28
+	jmp 0x0000000142B8914C
