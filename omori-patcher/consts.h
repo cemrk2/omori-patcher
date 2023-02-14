@@ -9,10 +9,10 @@ namespace Consts {
     const int WARN = 14;
 
     const DWORD_PTR OMORI_BASE = 0x0000000140000000;
-    const DWORD_PTR codecave = 0x00007FF76D60C621;
-    const DWORD_PTR codecaveEnd = 0x00007FF76D60D625;
+    const DWORD_PTR codecave = 0x0000000142BEC621;
+    const DWORD_PTR codecaveEnd = 0x0000000142BED625;
 
 
-    const DWORD_PTR JS_NewCFunction = 0x00007FF76D0D1A54;
+    const DWORD_PTR JS_NewCFunction = 0x00000001426B1A54;
     const DWORD_PTR JS_NewCFunctionOffset = 1;
 }
