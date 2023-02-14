@@ -4,11 +4,14 @@
 #include "zasm/program/program.hpp"
 #include "zasm/x86/assembler.hpp"
 #include "zasm/serialization/serializer.hpp"
+#include "zasm/x86/x86.hpp"
 #include <Zydis/Zydis.h>
 
 namespace Mem
 {
     using namespace zasm::x86;
+
+    Xmm* xmms = new Xmm[] { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 };
 
     size_t codeLength(BYTE* code)
     {
@@ -127,6 +130,11 @@ namespace Mem
         zasm::Program program(zasm::MachineMode::AMD64);
         zasm::x86::Assembler a(program);
 
+        for (int i = 0; i < 16; ++i) {
+            a.sub(rsp, 16);
+            a.movdqu(xmmword_ptr(rsp), xmms[i]);
+        }
+
         // Backup rax, rbx, rcx, rdx, rbp, rsi, rdi and r8 through r15
         a.push(rax);
         a.push(rbx);
@@ -175,6 +183,11 @@ namespace Mem
         a.pop(rcx);
         a.pop(rbx);
         a.pop(rax);
+
+        for (int i = 15; i >= 0; i--) {
+            a.movdqu(xmms[i], xmmword_ptr(rsp));
+            a.add(rsp, 16);
+        }
 
         a.add(rsp, 8);
         a.jmp(targetInsn);
