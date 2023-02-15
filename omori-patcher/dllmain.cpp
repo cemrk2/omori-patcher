@@ -19,7 +19,7 @@ void PatcherMain()
 
     Utils::Success("DLL Successfully loaded!");
 
-    Mem::HookOnce(Consts::JS_NewCFunction, Consts::JS_NewCFunctionOffset, (DWORD_PTR) &JS_NewCFunctionHook);
+    Mem::Hook(Consts::JS_NewCFunction, Consts::JS_NewCFunctionOffset, (DWORD_PTR) &JS_NewCFunctionHook);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)

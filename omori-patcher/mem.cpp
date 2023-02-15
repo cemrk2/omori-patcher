@@ -36,14 +36,6 @@ namespace Mem
         return codeLength;
     }
 
-    void Write(DWORD_PTR dst, void* src, size_t len)
-    {
-        DWORD old;
-        VirtualProtect((LPVOID)dst, len, PAGE_EXECUTE_READWRITE, &old);
-        memcpy((void*)dst, src, len);
-        VirtualProtect((LPVOID)dst, len, old, &old);
-    }
-
     void* codecaveAlloc(size_t size)
     {
         DWORD _;
@@ -56,20 +48,6 @@ namespace Mem
             return nullptr;
         }
         return old;
-    }
-
-    void* CreateCall(DWORD_PTR addr)
-    {
-        void* code = new BYTE[13]
-                {
-                        0x50, // push rax
-                        0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov rax, ...
-                        0xFF, 0xD0  // call rax
-                };
-
-        memcpy((void*)((DWORD_PTR)code + 3), &addr, 8);
-
-        return code;
     }
 
     size_t getPaddedLength(DWORD_PTR insn, size_t alignTo)
@@ -121,9 +99,9 @@ namespace Mem
         };
     }
 
-    HookResult HookOnce(DWORD_PTR targetInsn, int offset, DWORD_PTR hookFn)
+    HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset)
     {
-        auto hookRes = createCall(targetInsn, offset, (DWORD_PTR) mallocI, false);
+        auto hookRes = createCall(targetInsn, funcOffset, (DWORD_PTR) mallocI, false);
 
         Utils::Infof("backup: %p", hookRes.backupPtr);
 
@@ -158,7 +136,7 @@ namespace Mem
         a.mov(r15, zasm::Imm64(hookFn));
         a.call(r15);
 
-        a.mov(rcx, zasm::Imm64(targetInsn+offset));
+        a.mov(rcx, zasm::Imm64(targetInsn+funcOffset));
         a.mov(rdx, zasm::Imm64((DWORD_PTR) hookRes.backupPtr));
         a.mov(r8, zasm::Imm64(hookRes.size + hookRes.padding));
         a.mov(rax, zasm::Imm64((DWORD_PTR) memcpy));
@@ -190,7 +168,7 @@ namespace Mem
         }
 
         a.add(rsp, 16);
-        a.jmp(targetInsn);
+        a.jmp(jmpToOffset ? targetInsn + funcOffset : targetInsn);
 
         zasm::Serializer serializer{};
         auto res = serializer.serialize(program, (int64_t) mallocI);
@@ -206,8 +184,44 @@ namespace Mem
         return hookRes;
     }
 
-    void Hook(DWORD_PTR targetInsn, DWORD_PTR hookFn)
+    void Hook(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn)
     {
+        auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false);
+        size_t hook1Len = hook1.size + hook1.padding;
+        Utils::Infof("hook1 length: %d", hook1Len);
+
+        void* hookBackup = malloc(hook1Len);
+        memcpy(hookBackup, (void*) (targetInsn + funcOffset), hook1Len);
+
+        zasm::Program program(zasm::MachineMode::AMD64);
+        zasm::x86::Assembler a(program);
+
+        a.mov(rcx, zasm::Imm64(targetInsn + funcOffset));
+        a.mov(rdx, zasm::Imm64((DWORD_PTR)hookBackup));
+        a.mov(r8, zasm::Imm64(hook1Len));
+        a.mov(r15, zasm::Imm64((DWORD_PTR) memcpy));
+        a.call(r15);
+        a.ret();
+
+        zasm::Serializer serializer{};
+        auto res = serializer.serialize(program, (int64_t) mallocI);
+        if (res != zasm::Error::None)
+        {
+            Utils::Errorf("Hook: Failed to serialize program %s", getErrorName(res));
+            return;
+        }
+
+        void* codePtr = codecaveAlloc(serializer.getCodeSize());
+        memcpy(codePtr, serializer.getCode(), serializer.getCodeSize());
+
+        Utils::Infof("hook2 codePtr: %p", codePtr);
+
+        Utils::Infof("hook2 at %p", targetInsn+hook1Len);
+        auto hook2 = HookOnce(targetInsn+hook1Len, 1, (DWORD_PTR)codePtr, true);
+        Utils::Infof("hook2: %d %d", hook2.size, hook2.padding);
+
+        DWORD _;
+        VirtualProtect((LPVOID)targetInsn, hook1Len + hook2.size + hook2.padding, PAGE_EXECUTE_READWRITE, &_);
 
     }
 
