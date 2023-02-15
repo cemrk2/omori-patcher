@@ -61,7 +61,7 @@ namespace Mem
         return i;
     }
 
-    HookResult createCall(DWORD_PTR targetInsn, int offset, DWORD_PTR targetFn, bool restorePerms)
+    HookResult createCall(DWORD_PTR targetInsn, int offset, DWORD_PTR targetFn, bool restorePerms, size_t backupLen)
     {
         zasm::Program program(zasm::MachineMode::AMD64);
         zasm::x86::Assembler a(program);
@@ -79,16 +79,17 @@ namespace Mem
 
         size_t size = serializer.getCodeSize();
         size_t padding = getPaddedLength(targetInsn+offset, size) - size;
-        void* backup = malloc(size + padding);
-        memcpy(backup, (void*) (targetInsn+offset), size + padding);
+        if (backupLen < size + padding) backupLen = size + padding;
+        void* backup = malloc(backupLen);
+        memcpy(backup, (void*) (targetInsn+offset), backupLen);
         DWORD permBackup;
-        VirtualProtect((LPVOID) (targetInsn+offset), size + padding, PAGE_EXECUTE_READWRITE, &permBackup);
-        memset((void*) (targetInsn+offset), 0xCC, size + padding); // add int3 padding
+        VirtualProtect((LPVOID) (targetInsn+offset), backupLen, PAGE_EXECUTE_READWRITE, &permBackup);
+        memset((void*) (targetInsn+offset), 0xCC, size+padding); // add int3 padding
 
         memcpy((void*) (targetInsn+offset), serializer.getCode(), size);
         Utils::Infof("%p+%d (%d %d)", targetInsn, offset, size, padding);
 
-        if (restorePerms) VirtualProtect((LPVOID) (targetInsn+offset), size + padding, permBackup, &permBackup);
+        if (restorePerms) VirtualProtect((LPVOID) (targetInsn+offset), backupLen, permBackup, &permBackup);
 
         return HookResult
         {
@@ -99,9 +100,10 @@ namespace Mem
         };
     }
 
-    HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset)
+    HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset, size_t backupLen)
     {
-        auto hookRes = createCall(targetInsn, funcOffset, (DWORD_PTR) mallocI, false);
+        auto hookRes = createCall(targetInsn, funcOffset, (DWORD_PTR) mallocI, false, backupLen);
+        if (backupLen < hookRes.size + hookRes.padding) backupLen = hookRes.size + hookRes.padding;
 
         Utils::Infof("backup: %p", hookRes.backupPtr);
 
@@ -138,7 +140,7 @@ namespace Mem
 
         a.mov(rcx, zasm::Imm64(targetInsn+funcOffset));
         a.mov(rdx, zasm::Imm64((DWORD_PTR) hookRes.backupPtr));
-        a.mov(r8, zasm::Imm64(hookRes.size + hookRes.padding));
+        a.mov(r8, zasm::Imm64(backupLen));
         a.mov(rax, zasm::Imm64((DWORD_PTR) memcpy));
         a.call(rax);
 
@@ -186,7 +188,8 @@ namespace Mem
 
     void Hook(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn)
     {
-        auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false);
+        Utils::Infof("targetInsn=%p", targetInsn);
+        auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50);
         size_t hook1Len = hook1.size + hook1.padding;
         Utils::Infof("hook1 length: %d", hook1Len);
 
@@ -217,11 +220,13 @@ namespace Mem
         Utils::Infof("hook2 codePtr: %p", codePtr);
 
         Utils::Infof("hook2 at %p", targetInsn+hook1Len);
-        auto hook2 = HookOnce(targetInsn+hook1Len, 1, (DWORD_PTR)codePtr, true);
+        auto hook2 = HookOnce(targetInsn+hook1Len, 1, (DWORD_PTR)codePtr, true, 0);
         Utils::Infof("hook2: %d %d", hook2.size, hook2.padding);
 
         DWORD _;
         VirtualProtect((LPVOID)targetInsn, hook1Len + hook2.size + hook2.padding, PAGE_EXECUTE_READWRITE, &_);
+
+        memcpy((void*) ((DWORD_PTR)hook1.backupPtr+hook1Len), (void*) (targetInsn+funcOffset+hook1Len), 50 - hook1Len);
 
     }
 
