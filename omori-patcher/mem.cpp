@@ -12,6 +12,7 @@ namespace Mem
     using namespace zasm::x86;
 
     Xmm* xmms = new Xmm[] { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 };
+    Gp64* registers = new Gp64[] { rax, rbx, rcx, rdx, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15, rsp };
 
     size_t codeLength(BYTE* code)
     {
@@ -61,7 +62,7 @@ namespace Mem
         return i;
     }
 
-    HookResult createCall(DWORD_PTR targetInsn, int offset, DWORD_PTR targetFn, bool restorePerms, size_t backupLen)
+    HookResult createCall(DWORD_PTR targetInsn, int offset, DWORD_PTR targetFn, size_t backupLen)
     {
         zasm::Program program(zasm::MachineMode::AMD64);
         zasm::x86::Assembler a(program);
@@ -82,14 +83,12 @@ namespace Mem
         if (backupLen < size + padding) backupLen = size + padding;
         void* backup = malloc(backupLen);
         memcpy(backup, (void*) (targetInsn+offset), backupLen);
-        DWORD permBackup;
-        VirtualProtect((LPVOID) (targetInsn+offset), backupLen, PAGE_EXECUTE_READWRITE, &permBackup);
+        DWORD _;
+        VirtualProtect((LPVOID) (targetInsn+offset), backupLen, PAGE_EXECUTE_READWRITE, &_);
         memset((void*) (targetInsn+offset), 0xCC, size+padding); // add int3 padding
 
         memcpy((void*) (targetInsn+offset), serializer.getCode(), size);
         Utils::Infof("%p+%d (%d %d)", targetInsn, offset, size, padding);
-
-        if (restorePerms) VirtualProtect((LPVOID) (targetInsn+offset), backupLen, permBackup, &permBackup);
 
         return HookResult
         {
@@ -102,7 +101,7 @@ namespace Mem
 
     HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset, size_t backupLen)
     {
-        auto hookRes = createCall(targetInsn, funcOffset, (DWORD_PTR) mallocI, false, backupLen);
+        auto hookRes = createCall(targetInsn, funcOffset, (DWORD_PTR) mallocI, backupLen);
         if (backupLen < hookRes.size + hookRes.padding) backupLen = hookRes.size + hookRes.padding;
 
         Utils::Infof("backup: %p", hookRes.backupPtr);
@@ -115,23 +114,10 @@ namespace Mem
             a.movdqu(xmmword_ptr(rsp), xmms[i]);
         }
 
-        // Backup rax, rbx, rcx, rdx, rbp, rsi, rdi and r8 through r15
-        a.push(rax);
-        a.push(rbx);
-        a.push(rcx);
-        a.push(rdx);
-        a.push(rbp);
-        a.push(rsi);
-        a.push(rdi);
-        a.push(r8);
-        a.push(r9);
-        a.push(r10);
-        a.push(r11);
-        a.push(r12);
-        a.push(r13);
-        a.push(r14);
-        a.push(r15);
-        a.push(rsp);
+        // Backup cpu registers
+        for (int i = 0; i < 16; ++i) {
+            a.push(registers[i]);
+        }
 
         a.sub(rsp, 32);
 
@@ -147,22 +133,9 @@ namespace Mem
         a.add(rsp, 32);
 
         // Restore the original register values
-        a.pop(rsp);
-        a.pop(r15);
-        a.pop(r14);
-        a.pop(r13);
-        a.pop(r12);
-        a.pop(r11);
-        a.pop(r10);
-        a.pop(r9);
-        a.pop(r8);
-        a.pop(rdi);
-        a.pop(rsi);
-        a.pop(rbp);
-        a.pop(rdx);
-        a.pop(rcx);
-        a.pop(rbx);
-        a.pop(rax);
+        for (int i = 15; i >= 0; i--) {
+            a.pop(registers[i]);
+        }
 
         for (int i = 15; i >= 0; i--) {
             a.movdqu(xmms[i], xmmword_ptr(rsp));
