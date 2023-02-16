@@ -19,6 +19,11 @@ void JS_EvalHook(void* ctx,char* buf,size_t buf_len,char* filename,int eval_flag
     Utils::Infof("[eval] JSContext* ctx = %p,char* buf = %s,size_t buf_len = %d,char* filename = %s,int eval_flags = %d", ctx, buf, buf_len, filename, eval_flags);
 }
 
+void JS_EvalBinHook(void* ctx, char* filename)
+{
+    Utils::Infof("[evalbin] JSContext* ctx = %p, filename = %s", ctx, filename);
+}
+
 void PrintHook(char* msg)
 {
     Utils::Infof("[print] %s", msg);
@@ -35,8 +40,9 @@ void PatcherMain()
     Utils::Success("DLL Successfully loaded!");
 
     // Mem::Hook(Consts::JS_NewCFunction, Consts::JS_NewCFunctionOffset, (DWORD_PTR) &JS_NewCFunctionHook);
-    Mem::Hook(Consts::JS_Eval, Consts::JS_EvalOffset, (DWORD_PTR) &JS_EvalHook);
-    Mem::Hook(Consts::JSImpl_print_i, Consts::JSImpl_print_offset, (DWORD_PTR) &PrintHook);
+    Mem::Hook(Consts::JS_Eval, (DWORD_PTR) &JS_EvalHook);
+    Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook);
+    Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)

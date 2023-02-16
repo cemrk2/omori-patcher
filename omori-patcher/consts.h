@@ -13,9 +13,7 @@ namespace Consts {
     const DWORD_PTR codecaveEnd = 0x0000000142BED625;
 
     const DWORD_PTR JSImpl_print_i = 0x0000000142821ED1;
-    const int JSImpl_print_offset = 1;
     const DWORD_PTR JS_Eval = 0x0000000142777C70;
-    const int JS_EvalOffset = 1;
+    const DWORD_PTR JS_EvalBin = 0x0000000142777b34;
     const DWORD_PTR JS_NewCFunction = 0x00000001426B1A54;
-    const int JS_NewCFunctionOffset = 1;
 }

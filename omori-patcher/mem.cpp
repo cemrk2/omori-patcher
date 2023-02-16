@@ -159,8 +159,9 @@ namespace Mem
         return hookRes;
     }
 
-    void Hook(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn)
+    void Hook(DWORD_PTR targetInsn, DWORD_PTR hookFn)
     {
+        int funcOffset = 1;
         auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50);
         size_t hook1Len = hook1.size + hook1.padding;
         Utils::Infof("hook1 length: %d", hook1Len);
