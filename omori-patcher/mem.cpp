@@ -188,7 +188,6 @@ namespace Mem
 
     void Hook(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn)
     {
-        Utils::Infof("targetInsn=%p", targetInsn);
         auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50);
         size_t hook1Len = hook1.size + hook1.padding;
         Utils::Infof("hook1 length: %d", hook1Len);
@@ -227,7 +226,7 @@ namespace Mem
         VirtualProtect((LPVOID)targetInsn, hook1Len + hook2.size + hook2.padding, PAGE_EXECUTE_READWRITE, &_);
 
         memcpy((void*) ((DWORD_PTR)hook1.backupPtr+hook1Len), (void*) (targetInsn+funcOffset+hook1Len), 50 - hook1Len);
-
+        Utils::Successf("Hooked into %p+%d", targetInsn, funcOffset);
     }
 
 }

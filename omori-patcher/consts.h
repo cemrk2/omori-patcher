@@ -12,7 +12,8 @@ namespace Consts {
     const DWORD_PTR codecave = 0x0000000142BEC625;
     const DWORD_PTR codecaveEnd = 0x0000000142BED625;
 
-
+    const DWORD_PTR JS_Eval = 0x0000000142777C70;
+    const int JS_EvalOffset = 1;
     const DWORD_PTR JS_NewCFunction = 0x00000001426B1A54;
-    const DWORD_PTR JS_NewCFunctionOffset = 1;
+    const int JS_NewCFunctionOffset = 1;
 }
