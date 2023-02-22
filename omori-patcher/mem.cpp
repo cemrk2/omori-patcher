@@ -99,7 +99,8 @@ namespace Mem
         };
     }
 
-    HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset, size_t backupLen)
+    HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset, size_t backupLen,
+                        void(*asmCallback)(zasm::x86::Assembler a))
     {
         auto hookRes = createCall(targetInsn, funcOffset, (DWORD_PTR) mallocI, backupLen);
         if (backupLen < hookRes.size + hookRes.padding) backupLen = hookRes.size + hookRes.padding;
@@ -121,6 +122,7 @@ namespace Mem
 
         a.sub(rsp, 32);
 
+        asmCallback(a);
         a.mov(r15, zasm::Imm64(hookFn));
         a.call(r15);
 
@@ -159,10 +161,10 @@ namespace Mem
         return hookRes;
     }
 
-    void Hook(DWORD_PTR targetInsn, DWORD_PTR hookFn)
+    void HookAssembly(DWORD_PTR targetInsn, DWORD_PTR hookFn, bool useOffset, void(*asmCallback)(zasm::x86::Assembler a))
     {
-        int funcOffset = 1;
-        auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50);
+        int funcOffset = useOffset ? 1 : 0;
+        auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50, asmCallback);
         size_t hook1Len = hook1.size + hook1.padding;
         Utils::Infof("hook1 length: %d", hook1Len);
 
@@ -177,6 +179,7 @@ namespace Mem
         a.mov(r8, zasm::Imm64(hook1Len));
         a.mov(r15, zasm::Imm64((DWORD_PTR) memcpy));
         a.call(r15);
+        asmCallback(a);
         a.ret();
 
         zasm::Serializer serializer{};
@@ -193,7 +196,7 @@ namespace Mem
         Utils::Infof("hook2 codePtr: %p", codePtr);
 
         Utils::Infof("hook2 at %p", targetInsn+hook1Len);
-        auto hook2 = HookOnce(targetInsn+hook1Len, 1, (DWORD_PTR)codePtr, true, 0);
+        auto hook2 = HookOnce(targetInsn+hook1Len, 1, (DWORD_PTR)codePtr, true, 0, [](zasm::x86::Assembler a){});
         Utils::Infof("hook2: %d %d", hook2.size, hook2.padding);
 
         DWORD _;
@@ -201,6 +204,11 @@ namespace Mem
 
         memcpy((void*) ((DWORD_PTR)hook1.backupPtr+hook1Len), (void*) (targetInsn+funcOffset+hook1Len), 50 - hook1Len);
         Utils::Successf("Hooked into %p+%d", targetInsn, funcOffset);
+    }
+
+    void Hook(DWORD_PTR targetInsn, DWORD_PTR hookFn, bool useOffset)
+    {
+        HookAssembly(targetInsn, hookFn, useOffset, [](zasm::x86::Assembler a){});
     }
 
 }

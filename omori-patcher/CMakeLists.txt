@@ -1,4 +1,4 @@
-add_library (omori-patcher SHARED framework.h pch.h pch.cpp dllmain.cpp utils.cpp utils.h mem.cpp mem.h consts.h)
+add_library (omori-patcher SHARED framework.h pch.h pch.cpp dllmain.cpp utils.cpp utils.h mem.cpp mem.h consts.h Chowdren.exe.h)
 target_link_libraries("omori-patcher" PRIVATE "Zydis")
 target_link_libraries("omori-patcher" PRIVATE "zasm")
 
