@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "mod.h"
 #include <json/json.h>
 #include <cstring>
 
@@ -22,7 +23,10 @@ namespace Utils
 	void Error(const char* msg);
 	void Errorf(const char* msg, ...);
 	void Debug(DWORD_PTR addr, size_t len);
+    bool PathExists(const char* filename);
     FileData ReadFileData(const char* filename);
     char* ReadFileStr(const char* filename);
     Json::Value ParseJson(const char* str);
+    Mod ParseMod(const char* filename);
+    std::vector<Mod> ParseMods();
 }

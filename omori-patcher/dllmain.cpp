@@ -58,7 +58,7 @@ void PostEvalBinHook()
     Utils::Infof("JSRuntime* rt = %p", JSRuntimeInst);
     Utils::Infof("JSContext* ctx = %p", JSContextInst);
 
-    JS_EvalSafe(Utils::ReadFileStr("main.js"));
+    Utils::ParseMods();
 }
 
 void PatcherMain()

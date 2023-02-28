@@ -230,6 +230,11 @@ namespace Utils
         Utils::Info("========");
     }
 
+    bool PathExists(const char* path)
+    {
+        return GetFileAttributesA(path) != 0;
+    }
+
     FileData ReadFileData(const char* filename)
     {
         OFSTRUCT finfo;
@@ -281,5 +286,50 @@ namespace Utils
             Errorf("Failed to parse JSON: %s", str);
         }
         return root;
+    }
+
+    Mod ParseMod(const char* modid)
+    {
+        string infopath = string("mods\\") + modid + "\\mod.json";
+        Json::Value root;
+        if (!PathExists(infopath.c_str()))
+        {
+            Utils::Warnf("Mod: %s doesn't have a mod.json, skipping", modid);
+            return {root, nullptr};
+        }
+        root = ParseJson(ReadFileStr(infopath.c_str()));
+
+        return {
+            root,
+            root["id"].asString(),
+            root["name"].asString(),
+            root["description"].asString(),
+            root["version"].asString(),
+            root["main"].asString(),
+        };
+    }
+
+    std::vector<Mod> ParseMods()
+    {
+        std::vector<Mod> mods;
+
+        HANDLE handle;
+        WIN32_FIND_DATAA finfo;
+
+        if((handle = FindFirstFileA("mods/*", &finfo)) != INVALID_HANDLE_VALUE){
+            do{
+                auto name = finfo.cFileName;
+                if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
+                {
+                    continue;
+                }
+                auto mod = ParseMod(name);
+                if (mod.id.empty()) mods.push_back(mod);
+                Utils::Infof("%s", mod.id.c_str());
+            }while(FindNextFileA(handle, &finfo));
+            FindClose(handle);
+        }
+
+        return mods;
     }
 }
