@@ -6,6 +6,8 @@
 #include "io.h"
 #include "consts.h"
 
+using std::string;
+
 namespace Utils
 {
     // https://stackoverflow.com/questions/311955/redirecting-cout-to-a-console-in-windows
@@ -226,5 +228,58 @@ namespace Utils
             addr++;
         }
         Utils::Info("========");
+    }
+
+    FileData ReadFileData(const char* filename)
+    {
+        OFSTRUCT finfo;
+        auto handle = reinterpret_cast<HANDLE>(OpenFile(filename, &finfo, OF_READ));
+        if (handle == 0)
+        {
+            Utils::Errorf("Failed to open file for reading: %s", filename);
+            return {
+                nullptr,
+                0
+            };
+        }
+
+        DWORD size = GetFileSize(handle, nullptr);
+        void* buffer = malloc(size);
+
+        if (!ReadFile(handle, buffer, size, nullptr, nullptr))
+        {
+            Utils::Errorf("Failed to read file: %s", filename);
+            return {
+                    nullptr,
+                    size
+            };
+        }
+        CloseHandle(handle);
+
+        return {
+            (BYTE*)buffer,
+            size
+        };
+    }
+
+    char* ReadFileStr(const char* filename)
+    {
+        auto file = ReadFileData(filename);
+        char* newBuffer = (char*) malloc(file.size + 1);
+        memset(newBuffer, 0, file.size+1);
+        memcpy(newBuffer, file.data, file.size);
+        free(file.data);
+        return newBuffer;
+    }
+
+    Json::Value ParseJson(const char* str)
+    {
+        Json::Value root;
+        Json::Reader reader;
+        if (!reader.parse(string(str), root))
+        {
+            Errorf("Failed to parse JSON: %s", str);
+        }
+        return root;
     }
 }

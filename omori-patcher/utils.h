@@ -1,7 +1,14 @@
 #pragma once
 #include "pch.h"
+#include <json/json.h>
+#include <cstring>
 
 typedef unsigned int natural;
+
+struct FileData {
+    BYTE* data;
+    size_t size;
+};
 
 namespace Utils
 {
@@ -15,4 +22,7 @@ namespace Utils
 	void Error(const char* msg);
 	void Errorf(const char* msg, ...);
 	void Debug(DWORD_PTR addr, size_t len);
+    FileData ReadFileData(const char* filename);
+    char* ReadFileStr(const char* filename);
+    Json::Value ParseJson(const char* str);
 }

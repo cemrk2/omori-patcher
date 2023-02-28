@@ -58,8 +58,7 @@ void PostEvalBinHook()
     Utils::Infof("JSRuntime* rt = %p", JSRuntimeInst);
     Utils::Infof("JSContext* ctx = %p", JSContextInst);
 
-    JS_EvalSafe("chowjs.setDebug(true);");
-
+    JS_EvalSafe(Utils::ReadFileStr("main.js"));
 }
 
 void PatcherMain()

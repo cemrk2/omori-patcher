@@ -4,3 +4,6 @@
 [submodule "libs/zasm"]
 	path = libs/zasm
 	url = https://github.com/zyantific/zasm
+[submodule "libs/jsoncpp"]
+	path = libs/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp
