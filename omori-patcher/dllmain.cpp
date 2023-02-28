@@ -20,9 +20,9 @@ void JS_Eval(const char* code, const char* filename = "<omori-patcher>")
     JS_Eval(JSContextInst, code, strlen(code), filename, 0);
 }
 
-void JS_EvalSafe(const char* code, const char* filename = "<omori-patcher>")
+void JS_EvalMod(const char* code, const char* filename = "<omori-patcher>")
 {
-    JS_Eval((string("try { ") + code + " } catch(ex){ console.log(ex); }").c_str(), filename);
+    JS_Eval((string("try { (()=>{ ") + code + " })(); } catch(ex){ console.log(ex); }").c_str(), filename);
 }
 
 void JS_NewCFunctionHook(void* ctx, void* function, char* name, int length)
@@ -58,7 +58,10 @@ void PostEvalBinHook()
     Utils::Infof("JSRuntime* rt = %p", JSRuntimeInst);
     Utils::Infof("JSContext* ctx = %p", JSContextInst);
 
-    Utils::ParseMods();
+    for (auto mod : Utils::ParseMods())
+    {
+        JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), mod.main.c_str());
+    }
 }
 
 void PatcherMain()

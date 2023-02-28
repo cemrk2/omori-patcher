@@ -9,6 +9,7 @@ using std::string;
 struct Mod
 {
     Json::Value rawConfig;
+    string modDir;
     string id;
     string name;
     string description;

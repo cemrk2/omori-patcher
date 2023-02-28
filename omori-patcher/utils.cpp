@@ -301,6 +301,7 @@ namespace Utils
 
         return {
             root,
+            string(modid),
             root["id"].asString(),
             root["name"].asString(),
             root["description"].asString(),
@@ -324,8 +325,7 @@ namespace Utils
                     continue;
                 }
                 auto mod = ParseMod(name);
-                if (mod.id.empty()) mods.push_back(mod);
-                Utils::Infof("%s", mod.id.c_str());
+                if (!mod.id.empty()) mods.push_back(mod);
             }while(FindNextFileA(handle, &finfo));
             FindClose(handle);
         }
