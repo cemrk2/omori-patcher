@@ -38,19 +38,11 @@ void PrintHook(char* msg)
 
 void PostEvalBinHook()
 {
+    JSRuntimeInst = (JSRuntime*) (*((JSRuntime**)Consts::JSContextPtr));
+    JSContextInst = (JSContext*) (*((JSContext**)Consts::JSRuntimePtr));
     Utils::Info("PostEvalBinHook");
     Utils::Infof("JSRuntime* rt = %p", JSRuntimeInst);
     Utils::Infof("JSContext* ctx = %p", JSContextInst);
-}
-
-void PostNewRuntime2(JSRuntime* rt)
-{
-    JSRuntimeInst = rt;
-}
-
-void PostNewContextRaw(JSContext* ctx)
-{
-    JSContextInst = ctx;
 }
 
 void PatcherMain()
@@ -68,13 +60,6 @@ void PatcherMain()
     Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook, true);
     Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook, true);
     Mem::Hook(Consts::JSInit_PostEvalBin, (DWORD_PTR) &PostEvalBinHook, false);
-
-    Mem::HookAssembly(Consts::JS_NewRuntime2, (DWORD_PTR) &PostNewRuntime2, false, [](zasm::x86::Assembler a) {
-        a.mov(zasm::x86::rcx, zasm::x86::rax);
-    });
-    Mem::HookAssembly(Consts::JS_NewContextRaw, (DWORD_PTR) &PostNewContextRaw, false, [](zasm::x86::Assembler a) {
-        a.mov(zasm::x86::rcx, zasm::x86::rax);
-    });
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
