@@ -1,10 +1,13 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include <cstdio>
+#include <cstring>
 #include "pch.h"
 #include "utils.h"
 #include "mem.h"
 #include "consts.h"
 #include "Chowdren.exe.h"
+
+using std::string;
 
 typedef void (*JS_EvalFunc)(JSContext* ctx, const char* buf, size_t buf_len, const char* filename, int eval_flags);
 
@@ -17,11 +20,16 @@ void JS_Eval(const char* code, const char* filename = "<omori-patcher>")
     JS_Eval(JSContextInst, code, strlen(code), filename, 0);
 }
 
+void JS_EvalSafe(const char* code, const char* filename = "<omori-patcher>")
+{
+    JS_Eval((string("try { ") + code + " } catch(ex){ console.log(ex); }").c_str(), filename);
+}
+
 void JS_NewCFunctionHook(void* ctx, void* function, char* name, int length)
 {
     if (name != nullptr && *name != 0)
     {
-        // Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
+        Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
     }
 }
 
@@ -50,7 +58,8 @@ void PostEvalBinHook()
     Utils::Infof("JSRuntime* rt = %p", JSRuntimeInst);
     Utils::Infof("JSContext* ctx = %p", JSContextInst);
 
-    JS_Eval("try{ console.log(JSON.stringify(globalThis)); } catch(ex) { console.log(ex); }");
+    JS_EvalSafe("chowjs.setDebug(true);");
+
 }
 
 void PatcherMain()
