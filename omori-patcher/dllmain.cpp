@@ -22,7 +22,15 @@ void JS_Eval(const char* code, const char* filename = "<omori-patcher>")
 
 void JS_EvalMod(const char* code, const char* filename = "<omori-patcher>")
 {
-    JS_Eval((string("try { (()=>{ ") + code + " })(); } catch(ex){ console.error(ex); }").c_str(), filename);
+    char* filenameJS = (char*)malloc(strlen(filename)+1); // this part of the code is going to come back to haunt me one day
+    memcpy(filenameJS, filename, strlen(filename)+1);
+    for (size_t i = 0; i < strlen(filenameJS); i++)
+    {
+        if (filenameJS[i] == '\\') filenameJS[i] = '/';
+        if (filenameJS[i] == '\'') filenameJS[i] = '"';
+    }
+    JS_Eval((string("try { (()=>{ ") + code + " })(); } catch(ex){ print('Failed to run script: " + filenameJS + "'); console.error(ex); }").c_str(), filename);
+    free(filenameJS);
 }
 
 void JS_NewCFunctionHook(void* ctx, void* function, char* name, int length)
@@ -62,7 +70,7 @@ void PrintHook(char* msg)
         return;
     }
 
-    Utils::Infof("[print] %s", msg);
+    printf("%s\n", msg);
 }
 
 void PostEvalBinHook()
@@ -73,9 +81,9 @@ void PostEvalBinHook()
     Utils::Infof("JSRuntime* rt = %p", JSRuntimeInst);
     Utils::Infof("JSContext* ctx = %p", JSContextInst);
 
-    for (auto mod : Utils::ParseMods())
+    for (const auto& mod : Utils::ParseMods())
     {
-        JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), mod.main.c_str());
+        JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), (mod.modDir + "/" + mod.main).c_str());
     }
 }
 
