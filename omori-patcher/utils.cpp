@@ -238,7 +238,7 @@ namespace Utils
     FileData ReadFileData(const char* filename)
     {
         OFSTRUCT finfo;
-        auto handle = reinterpret_cast<HANDLE>(OpenFile(filename, &finfo, OF_READ));
+        auto handle = (HANDLE) OpenFile(filename, &finfo, OF_READ);
         if (handle == 0)
         {
             Utils::Errorf("Failed to open file for reading: %s", filename);

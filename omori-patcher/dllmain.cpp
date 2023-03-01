@@ -22,23 +22,18 @@ void JS_Eval(const char* code, const char* filename = "<omori-patcher>")
 
 void JS_EvalMod(const char* code, const char* filename = "<omori-patcher>")
 {
-    JS_Eval((string("try { (()=>{ ") + code + " })(); } catch(ex){ console.log(ex); }").c_str(), filename);
+    JS_Eval((string("try { (()=>{ ") + code + " })(); } catch(ex){ console.error(ex); }").c_str(), filename);
 }
 
 void JS_NewCFunctionHook(void* ctx, void* function, char* name, int length)
 {
     if (name != nullptr && *name != 0)
     {
-        Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
+        // Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
     }
 }
 
 void JS_DumpMemoryUsage(FILE* fp,JSMemoryUsage* s,JSRuntime* rt);
-
-void JS_EvalHook(JSContext* ctx, const char* buf, size_t buf_len, const char* filename, int eval_flags)
-{
-    Utils::Infof("[eval_safe] JSContext* ctx = %p,char* buf = %s,size_t buf_len = %d,char* filename = %s,int eval_flags = %d", ctx, buf, buf_len, filename, eval_flags);
-}
 
 void JS_EvalBinHook(JSContext* ctx, char* filename)
 {
@@ -47,6 +42,26 @@ void JS_EvalBinHook(JSContext* ctx, char* filename)
 
 void PrintHook(char* msg)
 {
+    if (strncmp("console.log: getImage", msg, strlen("console.log: getImage")) == 0) return;
+    const char* log = "console.log: ";
+    const char* warn = "console.warn: ";
+    const char* err = "console.error: ";
+    if (strncmp(log, msg, strlen(log)) == 0)
+    {
+        Utils::Infof("[console.log] %s", msg+strlen(log));
+        return;
+    }
+    if (strncmp(warn, msg, strlen(warn)) == 0)
+    {
+        Utils::Warnf("[console.warn] %s", msg+strlen(warn));
+        return;
+    }
+    if (strncmp(err, msg, strlen(err)) == 0)
+    {
+        Utils::Errorf("[console.error] %s", msg+strlen(err));
+        return;
+    }
+
     Utils::Infof("[print] %s", msg);
 }
 
@@ -75,7 +90,6 @@ void PatcherMain()
     Utils::Success("DLL Successfully loaded!");
 
     Mem::Hook(Consts::JS_NewCFunction, (DWORD_PTR) &JS_NewCFunctionHook, true);
-    Mem::Hook(Consts::JS_Eval, (DWORD_PTR) &JS_EvalHook, true);
     Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook, true);
     Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook, true);
     Mem::Hook(Consts::JSInit_PostEvalBin, (DWORD_PTR) &PostEvalBinHook, false);
