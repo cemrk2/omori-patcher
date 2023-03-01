@@ -1,6 +1,5 @@
-#ifndef OMORI_PATCHER_MOD_H
-#define OMORI_PATCHER_MOD_H
-
+#ifndef ModLoader_H
+#define ModLoader_H
 #include <json/json.h>
 #include <cstring>
 
@@ -17,4 +16,9 @@ struct Mod
     string main;
 };
 
-#endif //OMORI_PATCHER_MOD_H
+namespace ModLoader {
+    Mod ParseMod(const char *modId);
+    std::vector<Mod> ParseMods();
+    void LoadMods();
+}
+#endif

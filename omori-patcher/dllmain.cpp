@@ -1,47 +1,20 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include <cstdio>
 #include <cstring>
+#include "js.h"
 #include "pch.h"
-#include "utils.h"
 #include "mem.h"
+#include "utils.h"
 #include "consts.h"
-#include "Chowdren.exe.h"
-
-using std::string;
-
-typedef void (*JS_EvalFunc)(JSContext* ctx, const char* buf, size_t buf_len, const char* filename, int eval_flags);
-
-JSContext* JSContextInst;
-JSRuntime* JSRuntimeInst;
-
-void JS_Eval(const char* code, const char* filename = "<omori-patcher>")
-{
-    auto JS_Eval = (JS_EvalFunc) Consts::JS_Eval;
-    JS_Eval(JSContextInst, code, strlen(code), filename, 0);
-}
-
-void JS_EvalMod(const char* code, const char* filename = "<omori-patcher>")
-{
-    char* filenameJS = (char*)malloc(strlen(filename)+1); // this part of the code is going to come back to haunt me one day
-    memcpy(filenameJS, filename, strlen(filename)+1);
-    for (size_t i = 0; i < strlen(filenameJS); i++)
-    {
-        if (filenameJS[i] == '\\') filenameJS[i] = '/';
-        if (filenameJS[i] == '\'') filenameJS[i] = '"';
-    }
-    JS_Eval((string("try { (()=>{ ") + code + " })(); } catch(ex){ print('Failed to run script: " + filenameJS + "'); console.error(ex); }").c_str(), filename);
-    free(filenameJS);
-}
+#include "modloader.h"
 
 void JS_NewCFunctionHook(void* ctx, void* function, char* name, int length)
 {
     if (name != nullptr && *name != 0)
     {
-        // Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
+        Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
     }
 }
-
-void JS_DumpMemoryUsage(FILE* fp,JSMemoryUsage* s,JSRuntime* rt);
 
 void JS_EvalBinHook(JSContext* ctx, char* filename)
 {
@@ -75,16 +48,13 @@ void PrintHook(char* msg)
 
 void PostEvalBinHook()
 {
-    JSRuntimeInst = (JSRuntime*) (*((JSRuntime**)Consts::JSContextPtr));
-    JSContextInst = (JSContext*) (*((JSContext**)Consts::JSRuntimePtr));
+    js::JSRuntimeInst = (JSRuntime*) (*((JSRuntime**)Consts::JSContextPtr));
+    js::JSContextInst = (JSContext*) (*((JSContext**)Consts::JSRuntimePtr));
     Utils::Info("PostEvalBinHook");
-    Utils::Infof("JSRuntime* rt = %p", JSRuntimeInst);
-    Utils::Infof("JSContext* ctx = %p", JSContextInst);
+    Utils::Infof("JSRuntime* rt = %p", js::JSRuntimeInst);
+    Utils::Infof("JSContext* ctx = %p", js::JSContextInst);
 
-    for (const auto& mod : Utils::ParseMods())
-    {
-        JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), (mod.modDir + "/" + mod.main).c_str());
-    }
+    ModLoader::LoadMods();
 }
 
 void PatcherMain()
@@ -97,7 +67,7 @@ void PatcherMain()
 
     Utils::Success("DLL Successfully loaded!");
 
-    Mem::Hook(Consts::JS_NewCFunction, (DWORD_PTR) &JS_NewCFunctionHook, true);
+    // Mem::Hook(Consts::JS_NewCFunction, (DWORD_PTR) &JS_NewCFunctionHook, true);
     Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook, true);
     Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook, true);
     Mem::Hook(Consts::JSInit_PostEvalBin, (DWORD_PTR) &PostEvalBinHook, false);

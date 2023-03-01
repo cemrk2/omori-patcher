@@ -219,17 +219,6 @@ namespace Utils
         std::cout << std::endl;
     }
 
-    void Debug(DWORD_PTR addr, size_t len)
-    {
-        Utils::Infof("====[%p]====", addr);
-        for (size_t i = 0; i < len; i++)
-        {
-            Utils::Infof("[%p] %X", addr, (*(int*)addr) & 0xFF);
-            addr++;
-        }
-        Utils::Info("========");
-    }
-
     bool PathExists(const char* path)
     {
         return GetFileAttributesA(path) != 0;
@@ -239,7 +228,7 @@ namespace Utils
     {
         OFSTRUCT finfo;
         auto handle = (HANDLE) OpenFile(filename, &finfo, OF_READ);
-        if (handle == 0)
+        if (handle == nullptr)
         {
             Utils::Errorf("Failed to open file for reading: %s", filename);
             return {
@@ -286,50 +275,5 @@ namespace Utils
             Errorf("Failed to parse JSON: %s", str);
         }
         return root;
-    }
-
-    Mod ParseMod(const char* modid)
-    {
-        string infopath = string("mods\\") + modid + "\\mod.json";
-        Json::Value root;
-        if (!PathExists(infopath.c_str()))
-        {
-            Utils::Warnf("Mod: %s doesn't have a mod.json, skipping", modid);
-            return {root, nullptr};
-        }
-        root = ParseJson(ReadFileStr(infopath.c_str()));
-
-        return {
-            root,
-            string(modid),
-            root["id"].asString(),
-            root["name"].asString(),
-            root["description"].asString(),
-            root["version"].asString(),
-            root["main"].asString(),
-        };
-    }
-
-    std::vector<Mod> ParseMods()
-    {
-        std::vector<Mod> mods;
-
-        HANDLE handle;
-        WIN32_FIND_DATAA finfo;
-
-        if((handle = FindFirstFileA("mods/*", &finfo)) != INVALID_HANDLE_VALUE){
-            do{
-                auto name = finfo.cFileName;
-                if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
-                {
-                    continue;
-                }
-                auto mod = ParseMod(name);
-                if (!mod.id.empty()) mods.push_back(mod);
-            }while(FindNextFileA(handle, &finfo));
-            FindClose(handle);
-        }
-
-        return mods;
     }
 }
