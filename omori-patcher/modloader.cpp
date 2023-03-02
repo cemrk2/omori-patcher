@@ -5,6 +5,16 @@
 
 namespace ModLoader
 {
+    void test()
+    {
+        Utils::Warn("Hello from test");
+    }
+
+    void Register()
+    {
+        js::JS_NewCFunction2(js::JSContextInst,(void*)(DWORD_PTR)0x142821e78,"print",1,0,0);
+    }
+
     Mod ParseMod(const char* modId)
     {
         string infopath = string("mods\\") + modId + "\\mod.json";
@@ -54,6 +64,7 @@ namespace ModLoader
     {
         for (const auto& mod : ParseMods())
         {
+            Utils::Infof("Loading mod: %s", mod.name.c_str());
             js::JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), (mod.modDir + "/" + mod.main).c_str());
         }
     }

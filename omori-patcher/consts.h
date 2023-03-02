@@ -19,5 +19,6 @@ namespace Consts {
     const DWORD_PTR JSImpl_print_i = 0x0000000142821ED1;
     const DWORD_PTR JS_Eval = 0x0000000142777C70;
     const DWORD_PTR JS_EvalBin = 0x0000000142777b34;
-    const DWORD_PTR JS_NewCFunction = 0x00000001426B1A54;
+    const DWORD_PTR JS_NewCFunction2 = 0x00000001426B1A24;
+    const DWORD_PTR JS_NewCFunction3 = 0x00000001426B1A54;
 }

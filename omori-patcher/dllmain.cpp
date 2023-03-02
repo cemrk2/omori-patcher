@@ -8,11 +8,24 @@
 #include "consts.h"
 #include "modloader.h"
 
-void JS_NewCFunctionHook(void* ctx, void* function, char* name, int length)
+void JS_NewCFunctionHook(void* ctx, void* function, char* name, int length, int magic, short data_len, uint64_t unk)
 {
     if (name != nullptr && *name != 0)
     {
-        Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
+        if (js::JSContextInst == nullptr)
+        {
+            js::JSRuntimeInst = (JSRuntime * )(*((JSRuntime **) Consts::JSContextPtr));
+            js::JSContextInst = (JSContext * )(*((JSContext **) Consts::JSRuntimePtr));
+        }
+
+        if (!js::chowNativeFunctions.contains(string(name)))
+        {
+            js::chowNativeFunctions.insert(make_pair(string(name), ChowJSFunction {
+                function,
+                length
+            }));
+        }
+        Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d magic=%d data_len=%d unk=%d", ctx, function, name, name, length, magic, data_len, unk);
     }
 }
 
@@ -48,11 +61,11 @@ void PrintHook(char* msg)
 
 void PostEvalBinHook()
 {
-    js::JSRuntimeInst = (JSRuntime*) (*((JSRuntime**)Consts::JSContextPtr));
-    js::JSContextInst = (JSContext*) (*((JSContext**)Consts::JSRuntimePtr));
-    Utils::Info("PostEvalBinHook");
     Utils::Infof("JSRuntime* rt = %p", js::JSRuntimeInst);
     Utils::Infof("JSContext* ctx = %p", js::JSContextInst);
+
+    Utils::Info("Register native functions...");
+    ModLoader::Register();
 
     ModLoader::LoadMods();
 }
@@ -67,7 +80,7 @@ void PatcherMain()
 
     Utils::Success("DLL Successfully loaded!");
 
-    // Mem::Hook(Consts::JS_NewCFunction, (DWORD_PTR) &JS_NewCFunctionHook, true);
+    Mem::Hook(Consts::JS_NewCFunction3, (DWORD_PTR) &JS_NewCFunctionHook, true);
     Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook, true);
     Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook, true);
     Mem::Hook(Consts::JSInit_PostEvalBin, (DWORD_PTR) &PostEvalBinHook, false);
