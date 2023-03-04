@@ -22,62 +22,33 @@ typedef unsigned short    ushort;
 typedef unsigned short    wchar16;
 // typedef short    wchar_t;
 typedef unsigned short    word;
-typedef union _union_17 _union_17, *P_union_17;
+typedef struct JSContext JSContext, *PJSContext;
 
-typedef uchar uint8_t;
+typedef struct JSValue JSValue, *PJSValue;
 
-typedef ushort uint16_t;
-
-union _union_17 {
-    uint8_t str8[0];
-    uint16_t str16[0];
-};
-
-typedef union _union_22 _union_22, *P_union_22;
-
-union _union_22 {
-    uint8_t str8[0];
-    uint16_t str16[0];
-};
-
-typedef union _union_25 _union_25, *P_union_25;
-
-union _union_25 {
-    uint8_t str8[0];
-    uint16_t str16[0];
-};
-
-typedef union _union_28 _union_28, *P_union_28;
-
-union _union_28 {
-    uint8_t str8[0];
-    uint16_t str16[0];
-};
-
-typedef union _union_29 _union_29, *P_union_29;
-
-union _union_29 {
-    uint8_t str8[0];
-    uint16_t str16[0];
-};
-
-typedef enum enum_8 {
-    JS_GC_PHASE_NONE=0,
-    JS_GC_PHASE_DECREF=1,
-    JS_GC_PHASE_REMOVE_CYCLES=2
-} enum_8;
-
-typedef struct JSRuntime JSRuntime, *PJSRuntime;
+typedef ulonglong size_t;
 
 typedef struct JSGCObjectHeader JSGCObjectHeader, *PJSGCObjectHeader;
 
-typedef void (JS_MarkFunc)(struct JSRuntime *, struct JSGCObjectHeader *);
+typedef struct JSRuntime JSRuntime, *PJSRuntime;
+
+typedef struct list_head list_head, *Plist_head;
+
+typedef ushort uint16_t;
+
+typedef struct JSShape JSShape, *PJSShape;
+
+typedef ulonglong uint64_t;
+
+typedef int BOOL;
+
+typedef union JSValueUnion JSValueUnion, *PJSValueUnion;
+
+typedef longlong int64_t;
 
 typedef struct JSMallocFunctions JSMallocFunctions, *PJSMallocFunctions;
 
 typedef struct JSMallocState JSMallocState, *PJSMallocState;
-
-typedef ulonglong size_t;
 
 typedef uint uint32_t;
 
@@ -87,21 +58,19 @@ typedef struct JSString JSAtomStruct;
 
 typedef struct JSClass JSClass, *PJSClass;
 
-typedef struct list_head list_head, *Plist_head;
+typedef enum enum_8 {
+    JS_GC_PHASE_NONE=0,
+    JS_GC_PHASE_DECREF=1,
+    JS_GC_PHASE_REMOVE_CYCLES=2
+} enum_8;
 
 typedef enum enum_8 JSGCPhaseEnum;
 
 typedef ulonglong uintptr_t;
 
-typedef struct JSValue JSValue, *PJSValue;
-
-typedef int BOOL;
-
 typedef struct JSStackFrame JSStackFrame, *PJSStackFrame;
 
 typedef int (JSInterruptHandler)(struct JSRuntime *, void *);
-
-typedef struct JSContext JSContext, *PJSContext;
 
 typedef void (JSHostPromiseRejectionTracker)(struct JSContext *, struct JSValue, struct JSValue, int, void *);
 
@@ -113,13 +82,23 @@ typedef JSModuleDef * (JSModuleLoaderFunc)(struct JSContext *, char *, void *);
 
 typedef struct JSSharedArrayBufferFunctions JSSharedArrayBufferFunctions, *PJSSharedArrayBufferFunctions;
 
-typedef struct JSShape JSShape, *PJSShape;
+typedef uchar uint8_t;
+
+typedef struct JSObject JSObject, *PJSObject;
+
+typedef struct JSShapeProperty JSShapeProperty, *PJSShapeProperty;
+
+typedef int int32_t;
 
 typedef struct JSRefCountHeader JSRefCountHeader, *PJSRefCountHeader;
+
+typedef union _union_29 _union_29, *P_union_29;
 
 typedef uint32_t JSAtom;
 
 typedef void (JSClassFinalizer)(struct JSRuntime *, struct JSValue);
+
+typedef void (JS_MarkFunc)(struct JSRuntime *, struct JSGCObjectHeader *);
 
 typedef void (JSClassGCMark)(struct JSRuntime *, struct JSValue, JS_MarkFunc *);
 
@@ -130,47 +109,6 @@ typedef struct JSClassExoticMethods JSClassExoticMethods, *PJSClassExoticMethods
 typedef struct JSPropertyDescriptor JSPropertyDescriptor, *PJSPropertyDescriptor;
 
 typedef struct JSPropertyEnum JSPropertyEnum, *PJSPropertyEnum;
-
-typedef union JSValueUnion JSValueUnion, *PJSValueUnion;
-
-typedef longlong int64_t;
-
-typedef ulonglong uint64_t;
-
-typedef struct JSObject JSObject, *PJSObject;
-
-typedef struct JSShapeProperty JSShapeProperty, *PJSShapeProperty;
-
-typedef int int32_t;
-
-struct JSMemoryUsage {
-    uint64_t malloc_size;
-    uint64_t malloc_limit;
-    uint64_t memory_used_size;
-    uint64_t malloc_count;
-    uint64_t memory_used_count;
-    uint64_t atom_count;
-    uint64_t atom_size;
-    uint64_t str_count;
-    uint64_t str_size;
-    uint64_t obj_count;
-    uint64_t obj_size;
-    uint64_t prop_count;
-    uint64_t prop_size;
-    uint64_t shape_count;
-    uint64_t shape_size;
-    uint64_t func_count;
-    uint64_t func_size;
-    uint64_t func_code_size;
-    uint64_t js_func_pc2line_count;
-    uint64_t js_func_pc2line_size;
-    uint64_t c_func_count;
-    uint64_t array_count;
-    uint64_t fast_array_count;
-    uint64_t fast_array_elements;
-    uint64_t binary_object_count;
-    uint64_t binary_object_size;
-};
 
 struct JSShapeProperty {
     uint32_t hash_next:26;
@@ -206,14 +144,14 @@ struct JSObject {
 struct JSModuleDef {
 };
 
-struct JSRefCountHeader {
-    int ref_count;
-};
-
 union JSValueUnion {
     int32_t int32;
     double float64;
     void * ptr;
+};
+
+struct JSRefCountHeader {
+    int ref_count;
 };
 
 struct JSValue {
@@ -231,6 +169,11 @@ struct JSPropertyDescriptor {
 struct JSPropertyEnum {
     int is_enumerable;
     JSAtom atom;
+};
+
+union _union_29 {
+    uint8_t str8[0];
+    uint16_t str16[0];
 };
 
 struct JSString {
@@ -340,7 +283,7 @@ struct JSContext {
     struct JSValue array_ctor;
     struct JSValue regexp_ctor;
     struct JSValue promise_ctor;
-    struct JSValue native_error_proto[0];
+    struct JSValue native_error_proto[8];
     struct JSValue iterator_proto;
     struct JSValue async_iterator_proto;
     struct JSValue array_proto_values;
@@ -366,6 +309,4 @@ struct JSClassExoticMethods {
     JSValue (* get_property)(struct JSContext *, struct JSValue, JSAtom, struct JSValue);
     int (* set_property)(struct JSContext *, struct JSValue, JSAtom, struct JSValue, struct JSValue, int);
 };
-
-typedef uint32_t JSClassID;
 

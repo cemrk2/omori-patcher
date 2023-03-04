@@ -57,4 +57,36 @@ namespace ModLoader
             js::JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), (mod.modDir + "/" + mod.main).c_str());
         }
     }
+
+    void processMessage(int funcId, const Json::Value& value)
+    {
+        switch (funcId) {
+            case 1:
+                Utils::Infof("mp_pre: name: %s callback: %s", value["name"].asCString(), value["callback"].asCString());
+                break;
+            case 2:
+                Utils::Infof("mp_replace: name: %s callback: %s", value["name"].asCString(), value["callback"].asCString());
+                break;
+            case 3:
+                Utils::Infof("mp_post: name: %s callback: %s", value["name"].asCString(), value["callback"].asCString());
+                break;
+            case 4:
+                Utils::Infof("mp_commit: name: %s", value["name"].asCString());
+                break;
+            default:
+                Utils::Warnf("Unknown function id: %d, ignoring", funcId);
+                break;
+        }
+    }
+
+    void ParseMessage(const char* msg)
+    {
+        auto str = Utils::ParseJson(msg);
+        auto func = str.get("func", Json::Value(0)).asInt();
+
+        if (func != 0)
+        {
+            processMessage(func, str["data"]);
+        }
+    }
 }

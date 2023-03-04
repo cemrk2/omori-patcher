@@ -20,5 +20,6 @@ namespace ModLoader {
     Mod ParseMod(const char *modId);
     std::vector<Mod> ParseMods();
     void LoadMods();
+    void ParseMessage(const char* msg);
 }
 #endif

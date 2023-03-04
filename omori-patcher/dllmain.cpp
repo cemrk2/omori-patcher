@@ -27,6 +27,12 @@ void PrintHook(char* msg)
     const char* log = "console.log: ";
     const char* warn = "console.warn: ";
     const char* err = "console.error: ";
+    // TODO(nemtudom345): This is really hacky, but I can not for the life of me get a native c function to register
+    if (strncmp("<omori-patcher>: ", msg, strlen("<omori-patcher>: ")) == 0)
+    {
+        ModLoader::ParseMessage(msg + strlen("<omori-patcher>: "));
+        return;
+    }
     if (strncmp(log, msg, strlen(log)) == 0)
     {
         Utils::Infof("[console.log] %s", msg+strlen(log));
@@ -50,9 +56,12 @@ void PostEvalBinHook()
 {
     js::JSRuntimeInst = (JSRuntime*) (*((JSRuntime**)Consts::JSContextPtr));
     js::JSContextInst = (JSContext*) (*((JSContext**)Consts::JSRuntimePtr));
-    Utils::Info("PostEvalBinHook");
+
     Utils::Infof("JSRuntime* rt = %p", js::JSRuntimeInst);
     Utils::Infof("JSContext* ctx = %p", js::JSContextInst);
+
+    Utils::Info("Initializing omori-patcher stdlib");
+    js::JS_Eval(Utils::ReadFileStr("stdlib.js"), "stdlib.js");
 
     ModLoader::LoadMods();
 }
@@ -67,7 +76,7 @@ void PatcherMain()
 
     Utils::Success("DLL Successfully loaded!");
 
-    // Mem::Hook(Consts::JS_NewCFunction, (DWORD_PTR) &JS_NewCFunctionHook, true);
+    // Mem::Hook(Consts::JS_NewCFunction3, (DWORD_PTR) &JS_NewCFunctionHook, true);
     Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook, true);
     Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook, true);
     Mem::Hook(Consts::JSInit_PostEvalBin, (DWORD_PTR) &PostEvalBinHook, false);
