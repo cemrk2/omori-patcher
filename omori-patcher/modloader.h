@@ -17,7 +17,6 @@ struct Mod
 };
 
 namespace ModLoader {
-    void Register();
     Mod ParseMod(const char *modId);
     std::vector<Mod> ParseMods();
     void LoadMods();

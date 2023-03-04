@@ -11,7 +11,6 @@ namespace js
 
     JSContext* JSContextInst;
     JSRuntime* JSRuntimeInst;
-    map<string, ChowJSFunction> chowNativeFunctions;
 
     void JS_Eval(const char *code, const char *filename = "<omori-patcher>") {
         auto JS_Eval = (JS_EvalFunc) Consts::JS_Eval;
