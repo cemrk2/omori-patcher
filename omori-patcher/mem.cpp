@@ -163,6 +163,7 @@ namespace Mem
 
     void HookAssembly(DWORD_PTR targetInsn, DWORD_PTR hookFn, bool useOffset, void(*asmCallback)(zasm::x86::Assembler a))
     {
+        // TODO: Add support for fastcall 5+ args
         int funcOffset = useOffset ? 1 : 0;
         auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50, asmCallback);
         size_t hook1Len = hook1.size + hook1.padding;
