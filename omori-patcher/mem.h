@@ -3,8 +3,6 @@
 #include "consts.h"
 #include "zasm/x86/assembler.hpp"
 
-typedef unsigned int natural;
-
 struct HookResult
 {
     void* trampolinePtr;

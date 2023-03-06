@@ -14,6 +14,11 @@ namespace Mem
     Xmm* xmms = new Xmm[] { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 };
     Gp64* registers = new Gp64[] { rax, rbx, rcx, rdx, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15, rsp };
 
+    /**
+     * Decodes given assembly instruction and returns its length
+     * @param code Pointer to the instruction
+     * @return instruction length
+     */
     size_t codeLength(BYTE* code)
     {
         ZyanU8* data = code;
@@ -37,6 +42,11 @@ namespace Mem
         return codeLength;
     }
 
+    /**
+     * Allocates space in the codecave, changes memory permissions to RWX
+     * @param size Size for allocation
+     * @return Pointer to codecave
+     */
     void* codecaveAlloc(size_t size)
     {
         DWORD _;
@@ -51,6 +61,12 @@ namespace Mem
         return old;
     }
 
+    /**
+     * Calculates length of multiple instructions
+     * @param insn Pointer to the first instruction
+     * @param alignTo Minimum amount of bytes that need to be decoded
+     * @return Padded length
+     */
     size_t getPaddedLength(DWORD_PTR insn, size_t alignTo)
     {
         size_t i = 0;
@@ -62,6 +78,14 @@ namespace Mem
         return i;
     }
 
+    /**
+     * Writes a call instruction at a specified address
+     * @param targetInsn Place to write the call
+     * @param offset Offset from targetInsn
+     * @param targetFn Function to call
+     * @param backupLen Recommended backup length
+     * @return backup copy of instructions, length of call, padding
+     */
     HookResult createCall(DWORD_PTR targetInsn, int offset, DWORD_PTR targetFn, size_t backupLen)
     {
         zasm::Program program(zasm::MachineMode::AMD64);
@@ -99,6 +123,16 @@ namespace Mem
         };
     }
 
+    /**
+     * Adds a hook to a function, removes it self after the first call to the function
+     * @param targetInsn Target to hook
+     * @param funcOffset Offset from targetInsn
+     * @param hookFn Function to call
+     * @param jmpToOffset Offset to jump back
+     * @param backupLen Recommended backup length
+     * @param asmCallback Callback asm modifier
+     * @return
+     */
     HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset, size_t backupLen,
                         void(*asmCallback)(zasm::x86::Assembler a))
     {
@@ -161,6 +195,13 @@ namespace Mem
         return hookRes;
     }
 
+    /**
+     * Creates a persistent hook for a function
+     * @param targetInsn Instruction to hook
+     * @param hookFn Function to call
+     * @param useOffset Whether to use offsets or not
+     * @param asmCallback Callback asm modifier
+     */
     void HookAssembly(DWORD_PTR targetInsn, DWORD_PTR hookFn, bool useOffset, void(*asmCallback)(zasm::x86::Assembler a))
     {
         // TODO: Add support for fastcall 5+ args
@@ -207,6 +248,12 @@ namespace Mem
         Utils::Successf("Hooked into %p+%d", targetInsn, funcOffset);
     }
 
+    /**
+     * Creates a persistent hook for a function
+     * @param targetInsn Instruction to hook
+     * @param hookFn Function to call
+     * @param useOffset Whether to use offsets or not
+    */
     void Hook(DWORD_PTR targetInsn, DWORD_PTR hookFn, bool useOffset)
     {
         HookAssembly(targetInsn, hookFn, useOffset, [](zasm::x86::Assembler a){});
