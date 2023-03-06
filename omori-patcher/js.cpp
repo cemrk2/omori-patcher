@@ -42,7 +42,7 @@ namespace js
             if (filenameJS[i] == '\\') filenameJS[i] = '/';
             if (filenameJS[i] == '\'') filenameJS[i] = '"';
         }
-        JS_Eval((string("try { (()=>{ ") + code + " })(); } catch(ex){ print('Failed to run script: " + filenameJS +
+        JS_Eval((string("try { (()=>{ \n") + code + "\n })(); } catch(ex){ print('Failed to run script: " + filenameJS +
                  "'); console.error(ex); }").c_str(), filename);
         free(filenameJS);
     }
