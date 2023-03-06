@@ -8,11 +8,18 @@
 #include "consts.h"
 #include "modloader.h"
 
-void JS_NewCFunctionHook(void* ctx, void* function, char* name, int length)
+void JS_NewCFunctionHook(JSContext* ctx, void* function, char* name, int length)
 {
     if (name != nullptr && *name != 0)
     {
-        Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
+        if (!js::chowFuncs.contains(string(name)))
+        {
+            js::chowFuncs.insert(make_pair(string(name), js::ChowJSFunction {
+                    function,
+                    length
+            }));
+        }
+        // Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
     }
 }
 
@@ -76,7 +83,7 @@ void PatcherMain()
 
     Utils::Success("DLL Successfully loaded!");
 
-    // Mem::Hook(Consts::JS_NewCFunction3, (DWORD_PTR) &JS_NewCFunctionHook, true);
+    Mem::Hook(Consts::JS_NewCFunction3, (DWORD_PTR) &JS_NewCFunctionHook, true);
     Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook, true);
     Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook, true);
     Mem::Hook(Consts::JSInit_PostEvalBin, (DWORD_PTR) &PostEvalBinHook, false);

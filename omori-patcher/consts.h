@@ -21,4 +21,6 @@ namespace Consts {
     const DWORD_PTR JS_EvalBin = 0x0000000142777b34;
     const DWORD_PTR JS_NewCFunction2 = 0x00000001426B1A24;
     const DWORD_PTR JS_NewCFunction3 = 0x00000001426B1A54;
+    const DWORD_PTR JS_NewAtom = 0x00000001426B1770;
+    const DWORD_PTR JS_GetGlobalVar = 0x00000001426ACFAC;
 }

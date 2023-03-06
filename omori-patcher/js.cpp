@@ -8,9 +8,26 @@ using std::string;
 namespace js
 {
     typedef void (*JS_EvalFunc)(JSContext* ctx, const char* buf, size_t buf_len, const char* filename, int eval_flags);
+    typedef JSAtom (*JS_NewAtomFunc)(JSContext* ctx, const char* str, size_t len);
+    typedef JSValue (*JS_GetGlobalVarFunc)(JSContext* ctx, JSAtom prop, bool throw_ref_error);
+    std::map<std::string, ChowJSFunction> chowFuncs;
+    std::map<std::string, FunctionBackup> chowBackups;
+    std::map<std::string, std::vector<JSHook>> chowHooks;
 
     JSContext* JSContextInst;
     JSRuntime* JSRuntimeInst;
+
+    JSValue JS_GetGlobalVar(JSContext* ctx, JSAtom prop, bool throw_ref_error)
+    {
+        auto JS_GetGlobalVar = (JS_GetGlobalVarFunc) Consts::JS_GetGlobalVar;
+        return JS_GetGlobalVar(ctx, prop, throw_ref_error);
+    }
+
+    JSAtom JS_NewAtom(JSContext* ctx, const char* str, size_t len)
+    {
+        auto JS_NewAtom = (JS_NewAtomFunc) Consts::JS_NewAtom;
+        return JS_NewAtom(ctx, str, len);
+    }
 
     void JS_Eval(const char *code, const char *filename = "<omori-patcher>") {
         auto JS_Eval = (JS_EvalFunc) Consts::JS_Eval;
