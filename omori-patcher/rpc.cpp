@@ -11,11 +11,12 @@ namespace rpc
     enum
     {
         INVALID,
+        WRITE_FILE,
+        MKDIR,
         HOOK_PRE,
         HOOK_REPLACE,
         HOOK_POST,
         HOOK_COMMIT,
-        WRITE_FILE
     };
 
     void hookState(js::JSHookType type, const string& name, const string& hookName)
@@ -51,9 +52,20 @@ namespace rpc
         Utils::WriteFileData(filename.c_str(), (void*) data.c_str(), data.length(), replace);
     }
 
+    void mkdir(const Json::String& dirname)
+    {
+        CreateDirectoryA(dirname.c_str(), NULL);
+    }
+
     void processMessage(int funcId, const Json::Value& value)
     {
         switch (funcId) {
+            case WRITE_FILE:
+                writeFile(value["filename"].asString(), value["data"].asString(), value["replace"].asBool());
+                break;
+            case MKDIR:
+                mkdir(value["dirname"].asString());
+                break;
             case HOOK_PRE:
                 hookState(js::JSHookType::PRE, value["name"].asString(), value["callback"].asString());
                 break;
@@ -65,9 +77,6 @@ namespace rpc
                 break;
             case HOOK_COMMIT:
                 hookCommit(value["name"].asString());
-                break;
-            case WRITE_FILE:
-                writeFile(value["filename"].asString(), value["data"].asString(), value["replace"].asBool());
                 break;
             default:
                 Utils::Warnf("Unknown function id: %d, ignoring", funcId);
