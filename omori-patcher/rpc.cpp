@@ -8,6 +8,16 @@ using std::string;
 
 namespace rpc
 {
+    enum
+    {
+        INVALID,
+        HOOK_PRE,
+        HOOK_REPLACE,
+        HOOK_POST,
+        HOOK_COMMIT,
+        WRITE_FILE
+    };
+
     void hookState(js::JSHookType type, const string& name, const string& hookName)
     {
         if (!js::chowFuncs.contains(name))
@@ -37,20 +47,27 @@ namespace rpc
         }
     }
 
+    void writeFile(const Json::String& filename, const Json::String& data, bool replace) {
+        Utils::WriteFileData(filename.c_str(), (void*) data.c_str(), data.length(), replace);
+    }
+
     void processMessage(int funcId, const Json::Value& value)
     {
         switch (funcId) {
-            case 1:
+            case HOOK_PRE:
                 hookState(js::JSHookType::PRE, value["name"].asString(), value["callback"].asString());
                 break;
-            case 2:
+            case HOOK_REPLACE:
                 hookState(js::JSHookType::REPLACE, value["name"].asString(), value["callback"].asString());
                 break;
-            case 3:
+            case HOOK_POST:
                 hookState(js::JSHookType::POST, value["name"].asString(), value["callback"].asString());
                 break;
-            case 4:
+            case HOOK_COMMIT:
                 hookCommit(value["name"].asString());
+                break;
+            case WRITE_FILE:
+                writeFile(value["filename"].asString(), value["data"].asString(), value["replace"].asBool());
                 break;
             default:
                 Utils::Warnf("Unknown function id: %d, ignoring", funcId);

@@ -266,6 +266,36 @@ namespace Utils
         return newBuffer;
     }
 
+    bool WriteFileData(const char* filename, void* data, size_t dataLen, bool replaceExisting)
+    {
+        if (Utils::PathExists(filename))
+        {
+            if (replaceExisting)
+            {
+                DeleteFileA(filename);
+            }
+            else
+            {
+                return true;
+            }
+        }
+        auto handle = (HANDLE) CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (handle == nullptr)
+        {
+            Utils::Errorf("Failed to open file for writing: %s", filename);
+            return false;
+        }
+
+        if (!WriteFile(handle, data, dataLen, NULL, NULL))
+        {
+            Utils::Errorf("Failed to write data to file: %s", filename);
+        }
+
+        CloseHandle(handle);
+
+        return true;
+    }
+
     Json::Value ParseJson(const char* str)
     {
         Json::Value root;

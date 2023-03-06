@@ -24,5 +24,6 @@ namespace Utils
     bool PathExists(const char* filename);
     FileData ReadFileData(const char* filename);
     char* ReadFileStr(const char* filename);
+    bool WriteFileData(const char* filename, void* data, size_t dataLen, bool replaceExisting);
     Json::Value ParseJson(const char* str);
 }
