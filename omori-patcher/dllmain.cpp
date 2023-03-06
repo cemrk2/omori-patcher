@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "consts.h"
 #include "modloader.h"
+#include "rpc.h"
 
 void JS_NewCFunctionHook(JSContext* ctx, void* function, char* name, int length)
 {
@@ -37,7 +38,7 @@ void PrintHook(char* msg)
     // TODO(nemtudom345): This is really hacky, but I can not for the life of me get a native c function to register
     if (strncmp("<omori-patcher>: ", msg, strlen("<omori-patcher>: ")) == 0)
     {
-        ModLoader::ParseMessage(msg + strlen("<omori-patcher>: "));
+        rpc::ParseMessage(msg + strlen("<omori-patcher>: "));
         return;
     }
     if (strncmp(log, msg, strlen(log)) == 0)
