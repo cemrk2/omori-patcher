@@ -18,7 +18,7 @@ namespace Mem
     void Write(DWORD_PTR addr, void* input, size_t len);
     void* CreateCall(DWORD_PTR addr);
     HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset, size_t backupLen,
-                        void(*asmCallback)(zasm::x86::Assembler a));
+                        void* cbAsmPtr);
     void Hook(DWORD_PTR targetInsn, DWORD_PTR hookFn, bool useOffset);
     void HookAssembly(DWORD_PTR targetInsn, DWORD_PTR hookFn, bool useOffset, void(*asmCallback)(zasm::x86::Assembler a));
 }

@@ -134,7 +134,7 @@ namespace Mem
      * @return
      */
     HookResult HookOnce(DWORD_PTR targetInsn, int funcOffset, DWORD_PTR hookFn, bool jmpToOffset, size_t backupLen,
-                        void(*asmCallback)(zasm::x86::Assembler a))
+                        void* cbAsmPtr)
     {
         auto hookRes = createCall(targetInsn, funcOffset, (DWORD_PTR) mallocI, backupLen);
         if (backupLen < hookRes.size + hookRes.padding) backupLen = hookRes.size + hookRes.padding;
@@ -156,7 +156,13 @@ namespace Mem
 
         a.sub(rsp, 32);
 
-        asmCallback(a);
+        if (cbAsmPtr != nullptr) {
+            a.push(r15);
+            a.mov(r15, zasm::Imm64((DWORD_PTR)cbAsmPtr));
+            a.call(r15);
+            a.pop(r15);
+        }
+
         a.mov(r15, zasm::Imm64(hookFn));
         a.call(r15);
 
@@ -204,9 +210,27 @@ namespace Mem
      */
     void HookAssembly(DWORD_PTR targetInsn, DWORD_PTR hookFn, bool useOffset, void(*asmCallback)(zasm::x86::Assembler a))
     {
+        zasm::Program cbProgram(zasm::MachineMode::AMD64);
+        zasm::x86::Assembler cbA(cbProgram);
+        asmCallback(cbA);
+        zasm::Serializer cbSerializer{};
+        auto cbRes = cbSerializer.serialize(cbProgram, (int64_t) mallocI);
+        if (cbRes != zasm::Error::None)
+        {
+            Utils::Errorf("HookAssembly: Failed to serialize program %s", getErrorName(cbRes));
+            return;
+        }
+
+        void* cbAsmPtr = nullptr;
+        if (cbSerializer.getCodeSize() > 0)
+        {
+            cbAsmPtr = codecaveAlloc(cbSerializer.getCodeSize());
+            memcpy(cbAsmPtr, cbSerializer.getCode(), cbSerializer.getCodeSize());
+        }
+
         // TODO: Add support for fastcall 5+ args
         int funcOffset = useOffset ? 1 : 0;
-        auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50, asmCallback);
+        auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50, cbAsmPtr);
         size_t hook1Len = hook1.size + hook1.padding;
         Utils::Infof("hook1 length: %d", hook1Len);
 
@@ -221,7 +245,6 @@ namespace Mem
         a.mov(r8, zasm::Imm64(hook1Len));
         a.mov(r15, zasm::Imm64((DWORD_PTR) memcpy));
         a.call(r15);
-        asmCallback(a);
         a.ret();
 
         zasm::Serializer serializer{};
