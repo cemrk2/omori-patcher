@@ -23,7 +23,7 @@ namespace ModLoader
                 root["name"].asString(),
                 root["description"].asString(),
                 root["version"].asString(),
-                root["main"].asString(),
+                root.get("main", "").asString(),
         };
     }
 
@@ -54,7 +54,7 @@ namespace ModLoader
     {
         for (const auto& mod : ParseMods())
         {
-            js::JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), (mod.modDir + "/" + mod.main).c_str());
+            if (!mod.main.empty()) js::JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), (mod.modDir + "/" + mod.main).c_str());
         }
     }
 }
