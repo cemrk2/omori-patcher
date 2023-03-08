@@ -261,7 +261,7 @@ namespace Mem
         Utils::Infof("hook2 codePtr: %p", codePtr);
 
         Utils::Infof("hook2 at %p", targetInsn+hook1Len);
-        auto hook2 = HookOnce(targetInsn+hook1Len, 1, (DWORD_PTR)codePtr, true, 0, [](zasm::x86::Assembler a){});
+        auto hook2 = HookOnce(targetInsn+hook1Len, 1, (DWORD_PTR)codePtr, true, 0, nullptr);
         Utils::Infof("hook2: %d %d", hook2.size, hook2.padding);
 
         DWORD _;
