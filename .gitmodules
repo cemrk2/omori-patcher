@@ -7,3 +7,6 @@
 [submodule "libs/jsoncpp"]
 	path = libs/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp
+[submodule "libs/lib_detours/Detours"]
+	path = libs/lib_detours/Detours
+	url = https://github.com/microsoft/Detours
