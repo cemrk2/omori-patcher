@@ -14,29 +14,118 @@ std::map<HANDLE, std::wstring> fileMap;
 std::map<HANDLE, _LARGE_INTEGER> filePtrMap;
 std::mutex mapMutex;
 
+void addFileW(const Mod& mod, const wchar_t* pathWCstr)
+{
+    auto path = std::wstring(pathWCstr);
+    auto modDir_cstr = mod.modDir.c_str();
+    size_t modDir_cstrlen = strlen(modDir_cstr) + 1;
+    auto modDir = new wchar_t[modDir_cstrlen];
+    size_t convertedChars = 0;
+    mbstowcs_s(&convertedChars, modDir, modDir_cstrlen, modDir_cstr, _TRUNCATE);
+
+    auto modDirAbsWs = Utils::GetAbsolutePathW((std::wstring(L"mods/") + modDir).c_str());
+    auto modDirAbs = std::wstring(modDirAbsWs);
+
+    if (path.back() == L'\\')
+    {
+        HANDLE handle;
+        WIN32_FIND_DATAW finfo;
+
+        if((handle = FindFirstFileW((path + L"*").c_str(), &finfo)) != INVALID_HANDLE_VALUE)
+        {
+            do {
+                auto name = finfo.cFileName;
+                if (wcscmp(name, L".") == 0 || wcscmp(name, L"..") == 0) {
+                    continue;
+                }
+
+                std::wstring istr = path + name;
+                if ((GetFileAttributesW(istr.c_str()) & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+                    addFileW(mod, (istr + L"\\").c_str());
+                } else {
+                    addFileW(mod, istr.c_str());
+                }
+
+            } while (FindNextFileW(handle, &finfo));
+            FindClose(handle);
+        }
+    }
+    else
+    {
+        auto asset = path.substr(modDirAbs.size()+1, path.size());
+        auto fullBase = Utils::GetAbsolutePathW(asset.c_str());
+        overlay[std::wstring(fullBase)] = path;
+        free((void*) fullBase);
+    }
+
+    free(modDir);
+    free((void*) modDirAbsWs);
+}
+
+void addFile(const Mod& mod, const Json::Value& v)
+{
+    auto asset = v.asString();
+    auto modAsset = "mods/" + mod.modDir + "/" + asset;
+    const char* assetCStr = Utils::GetAbsolutePath(asset.c_str());
+    const char* modAssetCStr = Utils::GetAbsolutePath(modAsset.c_str());
+    size_t assetNewSize = strlen(assetCStr) + 1;
+    size_t modAssetNewSize = strlen(modAssetCStr) + 1;
+    auto assetWCStr = new wchar_t[assetNewSize];
+    auto modAssetWCstr = new wchar_t[modAssetNewSize];
+    size_t convertedChars = 0;
+    mbstowcs_s(&convertedChars, assetWCStr, assetNewSize, assetCStr, _TRUNCATE);
+    mbstowcs_s(&convertedChars, modAssetWCstr, modAssetNewSize, modAssetCStr, _TRUNCATE);
+
+    if (std::wstring(assetWCStr).back() == L'\\')
+    {
+        HANDLE handle;
+        WIN32_FIND_DATAW finfo;
+
+        if((handle = FindFirstFileW((std::wstring(modAssetWCstr) + L"*").c_str(), &finfo)) != INVALID_HANDLE_VALUE){
+            do{
+                auto name = finfo.cFileName;
+                if (wcscmp(name, L".") == 0 || wcscmp(name, L"..") == 0)
+                {
+                    continue;
+                }
+
+                std::wstring istr = std::wstring(modAssetWCstr) + name;
+                if ((GetFileAttributesW(istr.c_str()) & FILE_ATTRIBUTE_DIRECTORY) != 0)
+                {
+                    addFileW(mod, (istr + L"\\").c_str());
+                }
+                else
+                {
+                    addFileW(mod, istr.c_str());
+                }
+
+            }while(FindNextFileW(handle, &finfo));
+            FindClose(handle);
+        }
+    }
+    else
+    {
+        overlay[std::wstring(assetWCStr)] = modAssetWCstr;
+    }
+    free((void*) assetCStr);
+    free((void*) assetWCStr);
+    free((void*) modAssetCStr);
+    free((void*) modAssetWCstr);
+}
+
 void FS_RegisterOverlay(const Mod& mod)
 {
-    auto assets = mod.files.get("assets", {});
-    for (const auto& v : assets)
+    std::vector<std::string> modKeys = {"assets", "files", "maps", "data"};
+
+    for (const auto & modKey : modKeys)
     {
-        auto asset = v.asString();
-        auto newAsset = "mods/" + mod.modDir + "/" + asset;
-        const char* s = Utils::GetAbsolutePath(asset.c_str());
-        const char* newS = Utils::GetAbsolutePath(newAsset.c_str());
-        size_t s_newsize = strlen(s) + 1;
-        size_t newS_newsize = strlen(newS) + 1;
-        auto s_wcstring = new wchar_t[s_newsize];
-        auto newS_wcstring = new wchar_t[newS_newsize];
-        size_t convertedChars = 0;
-        mbstowcs_s(&convertedChars, s_wcstring, s_newsize, s, _TRUNCATE);
-        mbstowcs_s(&convertedChars, newS_wcstring, newS_newsize, newS, _TRUNCATE);
-
-        std::wcout << s_wcstring << " -> " << newS_wcstring << L"\n";
-
-        overlay[std::wstring(s_wcstring)] = newS_wcstring;
-        free((void*) s);
-        free((void*) s_wcstring);
+        auto arr = mod.files.get(modKey, {});
+        for (const auto& v : arr)
+        {
+            addFile(mod, v);
+        }
     }
+
 }
 
 BOOL WINAPI hookedSetFilePointerEx(HANDLE hFile, _LARGE_INTEGER liDistanceToMove, PLARGE_INTEGER lpNewFilePointer, DWORD dwMoveMethod)
@@ -55,7 +144,7 @@ BOOL WINAPI hookedSetFilePointerEx(HANDLE hFile, _LARGE_INTEGER liDistanceToMove
                 *lpNewFilePointer = filePtrMap[hFile];
                 break;
             case FILE_END:
-                filePtrMap[hFile].QuadPart = binOverlay[filename].size;
+                filePtrMap[hFile].QuadPart = (long long) binOverlay[filename].size;
                 *lpNewFilePointer = filePtrMap[hFile];
                 break;
             default:
