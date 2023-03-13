@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <cstdio>
 #include <iostream>
+#include <codecvt>
 #include "utils.h"
 #include "pch.h"
 #include "io.h"
@@ -305,5 +306,25 @@ namespace Utils
             Errorf("Failed to parse JSON: %s", str);
         }
         return root;
+    }
+
+    const char* GetAbsolutePath(const char* p1)
+    {
+        TCHAR newPath[MAX_PATH] = TEXT("");
+        TCHAR** lppPart = {NULL};
+        GetFullPathNameA(p1, MAX_PATH, (LPSTR)newPath, (LPSTR*)lppPart);
+        char* buff = (char*) malloc(MAX_PATH+1);
+        memcpy(buff, newPath, MAX_PATH+1);
+        return buff;
+    }
+
+    const wchar_t* GetAbsolutePathW(const wchar_t* p1)
+    {
+        TCHAR newPath[4096] = TEXT("");
+        TCHAR** lppPart = {NULL};
+        GetFullPathNameW(p1, 4096, (LPWSTR)newPath, (LPWSTR*)lppPart);
+        wchar_t* buff = (wchar_t*) malloc(4096+1);
+        memcpy(buff, newPath, 4096+1);
+        return buff;
     }
 }

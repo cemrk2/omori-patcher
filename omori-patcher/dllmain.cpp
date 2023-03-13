@@ -8,6 +8,8 @@
 #include "consts.h"
 #include "modloader.h"
 #include "rpc.h"
+#include "detours.h"
+#include "fs_overlay.h"
 
 void JS_NewCFunctionHook(JSContext* ctx, void* function, char* name, int length)
 {
@@ -71,7 +73,8 @@ void PostEvalBinHook()
     Utils::Info("Initializing omori-patcher stdlib");
     js::JS_Eval(Utils::ReadFileStr("stdlib.js"), "stdlib.js");
 
-    ModLoader::LoadMods();
+    Utils::Info("Running mods...");
+    ModLoader::RunMods();
 }
 
 void PatcherMain()
@@ -88,6 +91,28 @@ void PatcherMain()
     Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook, true);
     Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook, true);
     Mem::Hook(Consts::JSInit_PostEvalBin, (DWORD_PTR) &PostEvalBinHook, false);
+
+    Utils::Info("Patching win32 functions...");
+    DetourRestoreAfterWith();
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    FS_RegisterDetours();
+    if (DetourTransactionCommit() != NO_ERROR)
+    {
+        Utils::Error("Failed to patch win32 functions");
+        return;
+    }
+    Utils::Success("Patching complete");
+
+    Utils::Info("Parsing mods...");
+    ModLoader::mods = ModLoader::ParseMods();
+    Utils::Successf("Parsed %d %s", ModLoader::mods.size(), ModLoader::mods.size() == 1 ? "mod" : "mods");
+    Utils::Info("Registering files for fs overlay");
+    for (const Mod& mod : ModLoader::mods)
+    {
+        FS_RegisterOverlay(mod);
+    }
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)

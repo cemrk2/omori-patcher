@@ -5,6 +5,9 @@
 
 namespace ModLoader
 {
+
+    std::vector<Mod> mods;
+
     Mod ParseMod(const char* modId)
     {
         string infopath = string("mods\\") + modId + "\\mod.json";
@@ -24,6 +27,7 @@ namespace ModLoader
                 root["description"].asString(),
                 root["version"].asString(),
                 root.get("main", "").asString(),
+                root.get("files", {})
         };
     }
 
@@ -50,9 +54,9 @@ namespace ModLoader
         return mods;
     }
 
-    void LoadMods()
+    void RunMods()
     {
-        for (const auto& mod : ParseMods())
+        for (const auto& mod : mods)
         {
             if (!mod.main.empty()) js::JS_EvalMod(Utils::ReadFileStr(("mods\\" + mod.modDir + "\\" + mod.main).c_str()), (mod.modDir + "/" + mod.main).c_str());
         }
