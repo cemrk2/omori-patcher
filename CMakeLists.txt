@@ -11,6 +11,8 @@ option(ZYDIS_BUILD_DOXYGEN "" OFF)
 option(ZYDIS_BUILD_TOOLS "" OFF)
 option(ZYDIS_BUILD_EXAMPLES "" OFF)
 
+find_package(SailC++ CONFIG REQUIRED)
+
 add_subdirectory("libs/lib_detours")
 add_subdirectory("libs/jsoncpp")
 add_subdirectory("libs/zasm")
