@@ -12,6 +12,7 @@ option(ZYDIS_BUILD_TOOLS "" OFF)
 option(ZYDIS_BUILD_EXAMPLES "" OFF)
 
 find_package(SailC++ CONFIG REQUIRED)
+find_package(PNG REQUIRED)
 
 add_subdirectory("libs/lib_detours")
 add_subdirectory("libs/jsoncpp")
