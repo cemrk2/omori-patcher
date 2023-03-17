@@ -186,7 +186,7 @@ BOOL WINAPI hookedReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesTo
         size_t offset = filePtrMap[hFile].QuadPart;
         if (len + offset > binOverlay[filename].size) len = len + offset - binOverlay[filename].size;
         filePtrMap[hFile].QuadPart += nNumberOfBytesToRead;
-        if (filePtrMap[hFile].QuadPart >= binOverlay[filename].size) filePtrMap[hFile].QuadPart = 0;
+        if (filePtrMap[hFile].QuadPart >= binOverlay[filename].size) filePtrMap[hFile].QuadPart = len;
         memcpy(lpBuffer, binOverlay[filename].data+offset, len);
         *lpNumberOfBytesRead = len;
         return true;
