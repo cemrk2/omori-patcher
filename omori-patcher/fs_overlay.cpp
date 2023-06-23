@@ -34,7 +34,7 @@ BOOL WINAPI hookedSetFilePointerEx(HANDLE hFile, _LARGE_INTEGER liDistanceToMove
                 *lpNewFilePointer = filePtrMap[hFile];
                 break;
             default:
-                Utils::Warnf("Unsupported setFilePointerEx move method: %d", dwMoveMethod);
+                Warnf("Unsupported setFilePointerEx move method: %d", dwMoveMethod);
         }
         return true;
     }
@@ -66,7 +66,7 @@ BOOL WINAPI hookedReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesTo
     {
         if (lpOverlapped != nullptr)
         {
-            Utils::Warn("lpOverlapped != nullptr on an overlayed file, thinks might break");
+            Warn("lpOverlapped != nullptr on an overlayed file, thinks might break");
         }
         size_t len = nNumberOfBytesToRead;
         size_t offset = filePtrMap[hFile].QuadPart;

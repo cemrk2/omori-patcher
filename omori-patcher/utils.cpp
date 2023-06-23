@@ -9,6 +9,107 @@
 
 using std::string;
 
+#ifndef _UTILS_H
+#define _UTILS_H
+
+__declspec(dllexport) void Info(const char* msg)
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, Consts::INFO);
+    std::cout << "[INFO] ";
+    SetConsoleTextAttribute(hConsole, Consts::RESET);
+    std::cout << msg << std::endl;
+}
+
+__declspec(dllexport) void Infof(const char* format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, Consts::INFO);
+    std::cout << "[INFO] ";
+    SetConsoleTextAttribute(hConsole, Consts::RESET);
+
+    vprintf(format, argptr);
+    va_end(argptr);
+    std::cout << std::endl;
+}
+
+__declspec(dllexport) void Success(const char* msg)
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, Consts::SUCCESS);
+    std::cout << "[SUCCESS] ";
+    SetConsoleTextAttribute(hConsole, Consts::RESET);
+    std::cout << msg << std::endl;
+}
+
+__declspec(dllexport) void Successf(const char* format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, Consts::SUCCESS);
+    std::cout << "[SUCCESS] ";
+    SetConsoleTextAttribute(hConsole, Consts::RESET);
+
+    vprintf(format, argptr);
+    va_end(argptr);
+    std::cout << std::endl;
+}
+
+__declspec(dllexport) void Warn(const char* msg)
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, Consts::WARN);
+    std::cout << "[WARN] ";
+    SetConsoleTextAttribute(hConsole, Consts::RESET);
+    std::cout << msg << std::endl;
+}
+
+__declspec(dllexport) void Warnf(const char* format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, Consts::WARN);
+    std::cout << "[WARN] ";
+    SetConsoleTextAttribute(hConsole, Consts::RESET);
+
+    vprintf(format, argptr);
+    va_end(argptr);
+    std::cout << std::endl;
+}
+
+__declspec(dllexport) void Error(const char* msg)
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, Consts::ERR);
+    std::cout << "[ERROR] ";
+    SetConsoleTextAttribute(hConsole, Consts::RESET);
+    std::cout << msg << std::endl;
+}
+
+__declspec(dllexport) void Errorf(const char* format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, Consts::ERR);
+    std::cout << "[ERROR] ";
+    SetConsoleTextAttribute(hConsole, Consts::RESET);
+
+    vprintf(format, argptr);
+    va_end(argptr);
+    std::cout << std::endl;
+}
+
+#endif
+
 namespace Utils
 {
     // https://stackoverflow.com/questions/311955/redirecting-cout-to-a-console-in-windows
@@ -123,103 +224,7 @@ namespace Utils
             std::cerr.clear();
         }
     }
-
-    void Info(const char* msg)
-    {
-        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, Consts::INFO);
-        std::cout << "[INFO] ";
-        SetConsoleTextAttribute(hConsole, Consts::RESET);
-        std::cout << msg << std::endl;
-    }
-
-    void Infof(const char* format, ...)
-    {
-        va_list argptr;
-        va_start(argptr, format);
-
-        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, Consts::INFO);
-        std::cout << "[INFO] ";
-        SetConsoleTextAttribute(hConsole, Consts::RESET);
-
-        vprintf(format, argptr);
-        va_end(argptr);
-        std::cout << std::endl;
-    }
-
-    void Success(const char* msg)
-    {
-        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, Consts::SUCCESS);
-        std::cout << "[SUCCESS] ";
-        SetConsoleTextAttribute(hConsole, Consts::RESET);
-        std::cout << msg << std::endl;
-    }
-
-    void Successf(const char* format, ...)
-    {
-        va_list argptr;
-        va_start(argptr, format);
-
-        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, Consts::SUCCESS);
-        std::cout << "[SUCCESS] ";
-        SetConsoleTextAttribute(hConsole, Consts::RESET);
-
-        vprintf(format, argptr);
-        va_end(argptr);
-        std::cout << std::endl;
-    }
-
-    void Warn(const char* msg)
-    {
-        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, Consts::WARN);
-        std::cout << "[WARN] ";
-        SetConsoleTextAttribute(hConsole, Consts::RESET);
-        std::cout << msg << std::endl;
-    }
-
-    void Warnf(const char* format, ...)
-    {
-        va_list argptr;
-        va_start(argptr, format);
-
-        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, Consts::WARN);
-        std::cout << "[WARN] ";
-        SetConsoleTextAttribute(hConsole, Consts::RESET);
-
-        vprintf(format, argptr);
-        va_end(argptr);
-        std::cout << std::endl;
-    }
-
-    void Error(const char* msg)
-    {
-        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, Consts::ERR);
-        std::cout << "[ERROR] ";
-        SetConsoleTextAttribute(hConsole, Consts::RESET);
-        std::cout << msg << std::endl;
-    }
-
-    void Errorf(const char* format, ...)
-    {
-        va_list argptr;
-        va_start(argptr, format);
-
-        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hConsole, Consts::ERR);
-        std::cout << "[ERROR] ";
-        SetConsoleTextAttribute(hConsole, Consts::RESET);
-
-        vprintf(format, argptr);
-        va_end(argptr);
-        std::cout << std::endl;
-    }
-
+    
     bool PathExists(const char* path)
     {
         return GetFileAttributesA(path) != 0;
@@ -231,7 +236,7 @@ namespace Utils
         auto handle = (HANDLE) OpenFile(filename, &finfo, OF_READ);
         if (handle == nullptr)
         {
-            Utils::Errorf("Failed to open file for reading: %s", filename);
+            Errorf("Failed to open file for reading: %s", filename);
             return {
                 nullptr,
                 0
@@ -243,7 +248,7 @@ namespace Utils
 
         if (!ReadFile(handle, buffer, size, nullptr, nullptr))
         {
-            Utils::Errorf("Failed to read file: %s", filename);
+            Errorf("Failed to read file: %s", filename);
             return {
                     nullptr,
                     size
@@ -283,13 +288,13 @@ namespace Utils
         auto handle = (HANDLE) CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
         if (handle == nullptr)
         {
-            Utils::Errorf("Failed to open file for writing: %s", filename);
+            Errorf("Failed to open file for writing: %s", filename);
             return false;
         }
 
         if (!WriteFile(handle, data, dataLen, NULL, NULL))
         {
-            Utils::Errorf("Failed to write data to file: %s", filename);
+            Errorf("Failed to write data to file: %s", filename);
         }
 
         CloseHandle(handle);

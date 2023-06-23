@@ -12,6 +12,8 @@
 #include "detours.h"
 #include "fs_overlay.h"
 
+static HMODULE modHandle;
+
 void JS_NewCFunctionHook(JSContext* ctx, void* function, char* name, int length)
 {
     if (name != nullptr && *name != 0)
@@ -23,13 +25,13 @@ void JS_NewCFunctionHook(JSContext* ctx, void* function, char* name, int length)
                     length
             }));
         }
-        // Utils::Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
+        // Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
     }
 }
 
 void JS_EvalBinHook(JSContext* ctx, char* filename)
 {
-    Utils::Infof("[evalbin] JSContext* ctx = %p, filename = %s", ctx, filename);
+    Infof("[evalbin] JSContext* ctx = %p, filename = %s", ctx, filename);
 }
 
 void PrintHook(char* msg)
@@ -46,17 +48,17 @@ void PrintHook(char* msg)
     }
     if (strncmp(log, msg, strlen(log)) == 0)
     {
-        Utils::Infof("[console.log] %s", msg+strlen(log));
+        Infof("[console.log] %s", msg+strlen(log));
         return;
     }
     if (strncmp(warn, msg, strlen(warn)) == 0)
     {
-        Utils::Warnf("[console.warn] %s", msg+strlen(warn));
+        Warnf("[console.warn] %s", msg+strlen(warn));
         return;
     }
     if (strncmp(err, msg, strlen(err)) == 0)
     {
-        Utils::Errorf("[console.error] %s", msg+strlen(err));
+        Errorf("[console.error] %s", msg+strlen(err));
         return;
     }
 
@@ -68,10 +70,10 @@ void PostEvalBinHook()
     js::JSRuntimeInst = (JSRuntime*) (*((JSRuntime**)Consts::JSContextPtr));
     js::JSContextInst = (JSContext*) (*((JSContext**)Consts::JSRuntimePtr));
 
-    Utils::Infof("JSRuntime* rt = %p", js::JSRuntimeInst);
-    Utils::Infof("JSContext* ctx = %p", js::JSContextInst);
+    Infof("JSRuntime* rt = %p", js::JSRuntimeInst);
+    Infof("JSContext* ctx = %p", js::JSContextInst);
 
-    Utils::Info("Initializing omori-patcher stdlib");
+    Info("Initializing omori-patcher stdlib");
     js::JS_Eval(Utils::ReadFileStr("stdlib.js"), "stdlib.js");
 }
 
@@ -83,14 +85,14 @@ void PatcherMain()
     // Restore stdout, stderr and stdin
     Utils::BindCrtHandlesToStdHandles(true, true, true);
 
-    Utils::Success("DLL Successfully loaded!");
+    Success("DLL Successfully loaded!");
 
     Mem::Hook(Consts::JS_NewCFunction3, (DWORD_PTR) &JS_NewCFunctionHook, true);
     Mem::Hook(Consts::JS_EvalBin, (DWORD_PTR) &JS_EvalBinHook, true);
     Mem::Hook(Consts::JSImpl_print_i, (DWORD_PTR) &PrintHook, true);
     Mem::Hook(Consts::JSInit_PostEvalBin, (DWORD_PTR) &PostEvalBinHook, false);
 
-    Utils::Info("Patching win32 functions...");
+    Info("Patching win32 functions...");
     DetourRestoreAfterWith();
 
     DetourTransactionBegin();
@@ -98,10 +100,27 @@ void PatcherMain()
     FS_RegisterDetours();
     if (DetourTransactionCommit() != NO_ERROR)
     {
-        Utils::Error("Failed to patch win32 functions");
+        Error("Failed to patch win32 functions");
         return;
     }
-    Utils::Success("Patching complete");
+
+    Success("Patching complete");
+
+    Info("Initializing nim module");
+    modHandle = LoadLibraryA("ml.dll");
+    Infof("modHandle: %p", modHandle);
+    if (modHandle == 0 || modHandle == INVALID_HANDLE_VALUE) {
+        Error("Failed to initialize nim module!");
+        return;
+    }
+    auto MlMain = GetProcAddress(modHandle, "MlMain");
+    Infof("MlMain: %p", MlMain);
+    if (MlMain == 0 || MlMain == INVALID_HANDLE_VALUE) {
+        Error("Failed to find MlMain!");
+        return;
+    }
+    MlMain();
+    Success("Nim module initialzied!");
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)

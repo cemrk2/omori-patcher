@@ -55,7 +55,7 @@ namespace Mem
         mallocI += size;
         if (mallocI > Consts::codecaveEnd)
         {
-            Utils::Error("codecaveAlloc: No more free space in codecave");
+            Error("codecaveAlloc: No more free space in codecave");
             return nullptr;
         }
         return old;
@@ -98,7 +98,7 @@ namespace Mem
         auto res = serializer.serialize(program, (int64_t) targetInsn+offset);
         if (res != zasm::Error::None)
         {
-            Utils::Errorf("createCall: Failed to serialize program %s", getErrorName(res));
+            Errorf("createCall: Failed to serialize program %s", getErrorName(res));
             return {nullptr, nullptr, 0, 0};
         }
 
@@ -112,7 +112,7 @@ namespace Mem
         memset((void*) (targetInsn+offset), 0xCC, size+padding); // add int3 padding
 
         memcpy((void*) (targetInsn+offset), serializer.getCode(), size);
-        Utils::Infof("%p+%d (%d %d)", targetInsn, offset, size, padding);
+        Infof("%p+%d (%d %d)", targetInsn, offset, size, padding);
 
         return HookResult
         {
@@ -139,7 +139,7 @@ namespace Mem
         auto hookRes = createCall(targetInsn, funcOffset, (DWORD_PTR) mallocI, backupLen);
         if (backupLen < hookRes.size + hookRes.padding) backupLen = hookRes.size + hookRes.padding;
 
-        Utils::Infof("backup: %p", hookRes.backupPtr);
+        Infof("backup: %p", hookRes.backupPtr);
 
         zasm::Program program(zasm::MachineMode::AMD64);
         zasm::x86::Assembler a(program);
@@ -191,7 +191,7 @@ namespace Mem
         auto res = serializer.serialize(program, (int64_t) mallocI);
         if (res != zasm::Error::None)
         {
-            Utils::Errorf("HookOnce: Failed to serialize program %s", getErrorName(res));
+            Errorf("HookOnce: Failed to serialize program %s", getErrorName(res));
             return {nullptr, nullptr, 0, 0};
         }
 
@@ -217,7 +217,7 @@ namespace Mem
         auto cbRes = cbSerializer.serialize(cbProgram, (int64_t) mallocI);
         if (cbRes != zasm::Error::None)
         {
-            Utils::Errorf("HookAssembly: Failed to serialize program %s", getErrorName(cbRes));
+            Errorf("HookAssembly: Failed to serialize program %s", getErrorName(cbRes));
             return;
         }
 
@@ -232,7 +232,7 @@ namespace Mem
         int funcOffset = useOffset ? 1 : 0;
         auto hook1 = HookOnce(targetInsn, funcOffset, hookFn,  false, 50, cbAsmPtr);
         size_t hook1Len = hook1.size + hook1.padding;
-        Utils::Infof("hook1 length: %d", hook1Len);
+        Infof("hook1 length: %d", hook1Len);
 
         void* hookBackup = malloc(hook1Len);
         memcpy(hookBackup, (void*) (targetInsn + funcOffset), hook1Len);
@@ -251,24 +251,24 @@ namespace Mem
         auto res = serializer.serialize(program, (int64_t) mallocI);
         if (res != zasm::Error::None)
         {
-            Utils::Errorf("Hook: Failed to serialize program %s", getErrorName(res));
+            Errorf("Hook: Failed to serialize program %s", getErrorName(res));
             return;
         }
 
         void* codePtr = codecaveAlloc(serializer.getCodeSize());
         memcpy(codePtr, serializer.getCode(), serializer.getCodeSize());
 
-        Utils::Infof("hook2 codePtr: %p", codePtr);
+        Infof("hook2 codePtr: %p", codePtr);
 
-        Utils::Infof("hook2 at %p", targetInsn+hook1Len);
+        Infof("hook2 at %p", targetInsn+hook1Len);
         auto hook2 = HookOnce(targetInsn+hook1Len, 1, (DWORD_PTR)codePtr, true, 0, nullptr);
-        Utils::Infof("hook2: %d %d", hook2.size, hook2.padding);
+        Infof("hook2: %d %d", hook2.size, hook2.padding);
 
         DWORD _;
         VirtualProtect((LPVOID)targetInsn, hook1Len + hook2.size + hook2.padding, PAGE_EXECUTE_READWRITE, &_);
 
         memcpy((void*) ((DWORD_PTR)hook1.backupPtr+hook1Len), (void*) (targetInsn+funcOffset+hook1Len), 50 - hook1Len);
-        Utils::Successf("Hooked into %p+%d", targetInsn, funcOffset);
+        Successf("Hooked into %p+%d", targetInsn, funcOffset);
     }
 
     /**
