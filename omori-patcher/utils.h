@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.h"
-#include <json/json.h>
 #include <cstring>
 
 typedef unsigned int natural;
@@ -25,7 +24,6 @@ namespace Utils
     FileData ReadFileData(const char* filename);
     char* ReadFileStr(const char* filename);
     bool WriteFileData(const char* filename, void* data, size_t dataLen, bool replaceExisting);
-    Json::Value ParseJson(const char* str);
     const char* GetAbsolutePath(const char* p1);
     const wchar_t* GetAbsolutePathW(const wchar_t* p1);
 }

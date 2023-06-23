@@ -1,12 +1,13 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include <cstdio>
+#include <string>
+#include <utility>
 #include <cstring>
 #include "js.h"
 #include "pch.h"
 #include "mem.h"
 #include "utils.h"
 #include "consts.h"
-#include "modloader.h"
 #include "rpc.h"
 #include "detours.h"
 #include "fs_overlay.h"
@@ -15,9 +16,9 @@ void JS_NewCFunctionHook(JSContext* ctx, void* function, char* name, int length)
 {
     if (name != nullptr && *name != 0)
     {
-        if (!js::chowFuncs.contains(string(name)))
+        if (!js::chowFuncs.contains(std::string(name)))
         {
-            js::chowFuncs.insert(make_pair(string(name), js::ChowJSFunction {
+            js::chowFuncs.insert(std::make_pair(std::string(name), js::ChowJSFunction {
                     function,
                     length
             }));
@@ -72,9 +73,6 @@ void PostEvalBinHook()
 
     Utils::Info("Initializing omori-patcher stdlib");
     js::JS_Eval(Utils::ReadFileStr("stdlib.js"), "stdlib.js");
-
-    Utils::Info("Running mods...");
-    ModLoader::RunMods();
 }
 
 void PatcherMain()
@@ -104,15 +102,6 @@ void PatcherMain()
         return;
     }
     Utils::Success("Patching complete");
-
-    Utils::Info("Parsing mods...");
-    ModLoader::mods = ModLoader::ParseMods();
-    Utils::Successf("Parsed %d %s", ModLoader::mods.size(), ModLoader::mods.size() == 1 ? "mod" : "mods");
-    Utils::Info("Registering files for fs overlay");
-    for (const Mod& mod : ModLoader::mods)
-    {
-        FS_RegisterOverlay(mod);
-    }
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)

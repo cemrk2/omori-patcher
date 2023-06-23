@@ -297,17 +297,6 @@ namespace Utils
         return true;
     }
 
-    Json::Value ParseJson(const char* str)
-    {
-        Json::Value root;
-        Json::Reader reader;
-        if (!reader.parse(string(str), root))
-        {
-            Errorf("Failed to parse JSON: %s", str);
-        }
-        return root;
-    }
-
     const char* GetAbsolutePath(const char* p1)
     {
         TCHAR newPath[MAX_PATH] = TEXT("");

@@ -11,10 +11,10 @@ option(ZYDIS_BUILD_DOXYGEN "" OFF)
 option(ZYDIS_BUILD_TOOLS "" OFF)
 option(ZYDIS_BUILD_EXAMPLES "" OFF)
 
-find_package(SailC++ CONFIG REQUIRED)
-find_package(PNG REQUIRED)
+# find_package(SailC++ CONFIG REQUIRED)
+# find_package(PNG REQUIRED)
 
 add_subdirectory("libs/lib_detours")
-add_subdirectory("libs/jsoncpp")
+# add_subdirectory("libs/jsoncpp")
 add_subdirectory("libs/zasm")
 add_subdirectory("omori-patcher")
