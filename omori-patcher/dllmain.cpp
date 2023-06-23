@@ -120,7 +120,6 @@ void PatcherMain()
         return;
     }
     MlMain();
-    Success("Nim module initialzied!");
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
