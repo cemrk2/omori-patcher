@@ -1,4 +1,5 @@
 import std/strformat
+import std/strutils
 import utils
 import json
 
@@ -15,6 +16,7 @@ type
         meta*: ModMeta
         path*: string
         files*: seq[string]
+        jsond*: seq[string]
 
 proc parseMod*(m: var Mod, jsonData : string) =
     m.raw = json.parseJson(jsonData)
@@ -25,10 +27,19 @@ proc parseMod*(m: var Mod, jsonData : string) =
         for type in filesObj.keys:
             var files = filesObj[type]
             for fileNode in files:
-                var file = fileNode.getStr()
-                var typecpy {.inject.} = type
-                Info(fmt"[{m.meta.id}] type: {typecpy} path: {file}")
-                m.files.add(file)
+                let file = fileNode.getStr()
+                let exts = file.split('.')
+                var ext = ""
+                if exts.len() > 1:
+                    ext = exts[len(exts)-1]
+
+                case ext:
+                    of "jsond":
+                        Info(fmt"[{m.meta.id}] (jsond) path: {file}")
+                        m.jsond.add(file)
+                    else:
+                        Info(fmt"[{m.meta.id}] (static) path: {file}")
+                        m.files.add(file)
 
 
 export ModMeta, Mod

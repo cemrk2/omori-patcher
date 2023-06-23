@@ -31,6 +31,20 @@ __declspec(dllexport) void AddFileMap(const char* src, const char* dst)
     overlay.insert(std::pair(wide_src, wide_dst));
 }
 
+__declspec(dllexport) void AddBinFile(const char* path, size_t size, void* bin)
+{
+    printf("c_str: %s\n", path);
+    auto wide_path = std::wstring(Utils::GetAbsolutePathW(convert(std::string(path)).c_str()));
+    void* cpy = malloc(size);
+    memcpy(cpy, bin, size); // This is done to make sure that the data doesn't get accidentalyl gc'd
+    wprintf(L"path: %s, size: %d, binaddr: %p\n", wide_path.c_str(), size, cpy);
+
+    binOverlay.insert(std::pair(wide_path, FileData{
+        (BYTE*) cpy,
+        size
+    }));
+}
+
 BOOL WINAPI hookedSetFilePointerEx(HANDLE hFile, _LARGE_INTEGER liDistanceToMove, PLARGE_INTEGER lpNewFilePointer, DWORD dwMoveMethod)
 {
     std::lock_guard<std::mutex> lock(mapMutex);
