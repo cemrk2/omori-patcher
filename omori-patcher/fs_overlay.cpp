@@ -1,4 +1,7 @@
 #include <map>
+#include <locale>
+#include <string>
+#include <codecvt>
 #include <mutex>
 #include "fs_overlay.h"
 #include "utils.h"
@@ -13,6 +16,20 @@ std::map<std::wstring, FileData> binOverlay;
 std::map<HANDLE, std::wstring> fileMap;
 std::map<HANDLE, _LARGE_INTEGER> filePtrMap;
 std::mutex mapMutex;
+
+std::wstring convert(std::string str)
+{
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.from_bytes(str);
+}
+
+__declspec(dllexport) void AddFileMap(const char* src, const char* dst)
+{
+    auto wide_src = std::wstring(Utils::GetAbsolutePathW(convert(std::string(src)).c_str()));
+    auto wide_dst = std::wstring(Utils::GetAbsolutePathW(convert(std::string(dst)).c_str()));
+
+    overlay.insert(std::pair(wide_src, wide_dst));
+}
 
 BOOL WINAPI hookedSetFilePointerEx(HANDLE hFile, _LARGE_INTEGER liDistanceToMove, PLARGE_INTEGER lpNewFilePointer, DWORD dwMoveMethod)
 {

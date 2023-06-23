@@ -3,6 +3,7 @@ import std/strformat
 import modloader
 import utils
 import os
+import fs
 
 var mods : seq[Mod]
 
@@ -16,7 +17,8 @@ proc mlMain() =
   else:
     for file in walkDir("mods", true, true):
       var m = Mod()
-      m.parseMod(readFile(fmt"mods/{file.path}/mod.json"))
+      m.path = fmt"mods/{file.path}"
+      m.parseMod(readFile(fmt"{m.path}/mod.json"))
       mods.add(m)
 
   var txt = "mod"
@@ -25,6 +27,9 @@ proc mlMain() =
   Info(fmt"Parsed {len(mods)} {txt}")
   for m in mods:
     Info(fmt"- {m.meta.name} ({m.meta.id}) v{m.meta.version}")
+
+  Info("Registering overlay")
+  RegisterOverlayedFiles(mods)
 
 proc MlMain() {.stdcall, exportc, dynlib.} =
     try:
