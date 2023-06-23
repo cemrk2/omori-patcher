@@ -33,11 +33,9 @@ __declspec(dllexport) void AddFileMap(const char* src, const char* dst)
 
 __declspec(dllexport) void AddBinFile(const char* path, size_t size, void* bin)
 {
-    printf("c_str: %s\n", path);
     auto wide_path = std::wstring(Utils::GetAbsolutePathW(convert(std::string(path)).c_str()));
     void* cpy = malloc(size);
     memcpy(cpy, bin, size); // This is done to make sure that the data doesn't get accidentalyl gc'd
-    wprintf(L"path: %s, size: %d, binaddr: %p\n", wide_path.c_str(), size, cpy);
 
     binOverlay.insert(std::pair(wide_path, FileData{
         (BYTE*) cpy,
