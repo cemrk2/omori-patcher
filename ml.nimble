@@ -6,6 +6,9 @@ license = "MIT"
 requires "nim >= 1.6.12"
 requires "winim >= 3.9.1"
 requires "jsonpatch >= 0.1.0"
+requires "zippy >= 0.10.8"
+requires "pixie >= 5.0.6"
+requires "binstreams >= 0.2.0"
 
 task x64dbg, "Compiles omori-ml and launches omori with x64dbg":
 

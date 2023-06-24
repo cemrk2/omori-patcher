@@ -1,15 +1,19 @@
 import std/strformat
 import std/jsonutils
 import std/strutils
+import std/tables
+import binstreams
 import modloader
 import jsonpatch
+import streams
 import utils
+import olid
 import json
 import os
 
 type
     FileType = enum
-        ASSET, JSOND
+        ASSET, JSOND, OLID
 
 proc AddFileMap(src : cstring, dst : cstring) : void {.importc: "?AddFileMap@@YAXPEBD0@Z", dynlib: "omori-patcher.dll".}
 proc AddBinFile(path : cstring, size : csize_t, data : pointer) {.importc: "?AddBinFile@@YAXPEBD_KPEAX@Z", dynlib: "omori-patcher.dll".}
@@ -39,7 +43,7 @@ proc applyJsond(src : string, jsond : string) : string =
         newDoc = patch(newDoc, delta)
     return $newDoc.toJson
 
-proc registerFile(m : Mod, file : string, fileType : FileType) =
+proc registerFile(m : Mod, file : string, file2 : string, fileType : FileType) =
     case (fileType)
         of ASSET:
             AddFileMap(cstring(file), cstring(fmt"{m.path}/{file}"))
@@ -53,21 +57,35 @@ proc registerFile(m : Mod, file : string, fileType : FileType) =
             Info(fmt"{file} -> {srcFilePath}")
             let newSrc = cstring(applyJsond(src, jsond))
             AddBinFile(cstring(file[0 .. len(file)-2]), csize_t(len(newSrc)), cast[pointer](newSrc))
+        of OLID:
+            var imgFS = getFileSize(file)
+
+            var img = alloc(imgFS)
+            var imgH = open(file)
+            var olidH = open(fmt"{m.path}/{file2}")
+            var stream = newFileStream(imgH)
+            discard stream.readData(img, int(imgFS))
+            stream.close()
+
+            applyOLID(file2, img, binstreams.newFileStream(olidH, bigEndian), imgFS)
+
 
 proc RegisterOverlayedFiles(mods : seq[Mod]) =
     for m in mods:
         for file in m.files:
             if file.endsWith("/"):
                 for f in walkDirRec(fmt"{m.path}/{file}", {pcFile}):
-                    registerFile(m, f[len(m.path) + 1 .. len(f) - 1], ASSET)
+                    registerFile(m, f[len(m.path) + 1 .. len(f) - 1], "", ASSET)
             else:
-                registerFile(m, file, ASSET)
+                registerFile(m, file, "", ASSET)
         for file in m.jsond:
             if file.endsWith("/"):
                 for f in walkDirRec(fmt"{m.path}/{file}", {pcFile}):
-                    registerFile(m, f[len(m.path) + 1 .. len(f) - 1], JSOND)
+                    registerFile(m, f[len(m.path) + 1 .. len(f) - 1], "", JSOND)
             else:
-                registerFile(m, file, JSOND)
+                registerFile(m, file, "", JSOND)
+        for file, patch in m.olid.pairs:
+            registerFile(m, file, patch, OLID)
 
 
 export RegisterOverlayedFiles

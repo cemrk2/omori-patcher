@@ -1,5 +1,6 @@
 import std/strformat
 import std/strutils
+import std/tables
 import utils
 import json
 
@@ -17,10 +18,23 @@ type
         path*: string
         files*: seq[string]
         jsond*: seq[string]
+        olid*: Table[string, string]
 
 proc parseMod*(m: var Mod, jsonData : string) =
     m.raw = json.parseJson(jsonData)
     m.meta = to(m.raw, ModMeta)
+
+    if m.raw.hasKey("image_deltas"):
+        for delta in m.raw["image_deltas"]:
+            var src = delta["patch"].getStr()
+            var patch = delta["with"].getStr()
+            var dir = delta["dir"].getBool()
+
+            if dir:
+                Warn(fmt"Directory deltas are not supported, skipping {src}")
+            else:
+                m.olid[src] = patch
+
 
     if m.raw.hasKey("files"):
         var filesObj = m.raw["files"]
