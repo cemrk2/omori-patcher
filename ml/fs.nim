@@ -58,16 +58,8 @@ proc registerFile(m : Mod, file : string, file2 : string, fileType : FileType) =
             let newSrc = cstring(applyJsond(src, jsond))
             AddBinFile(cstring(file[0 .. len(file)-2]), csize_t(len(newSrc)), cast[pointer](newSrc))
         of OLID:
-            var imgFS = getFileSize(file)
-
-            var img = alloc(imgFS)
-            var imgH = open(file)
             var olidH = open(fmt"{m.path}/{file2}")
-            var stream = newFileStream(imgH)
-            discard stream.readData(img, int(imgFS))
-            stream.close()
-
-            applyOLID(file2, img, binstreams.newFileStream(olidH, bigEndian), imgFS)
+            applyOLID(file2, file, binstreams.newFileStream(olidH, bigEndian))
 
 
 proc RegisterOverlayedFiles(mods : seq[Mod]) =
