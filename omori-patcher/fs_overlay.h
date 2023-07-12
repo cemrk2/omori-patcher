@@ -1,9 +1,7 @@
 #ifndef OMORI_PATCHER_FS_OVERLAY_H
 #define OMORI_PATCHER_FS_OVERLAY_H
 
-#include "modloader.h"
-
 void FS_RegisterDetours();
-void FS_RegisterOverlay(const Mod& mod);
+__declspec(dllexport) void AddFileMap(const char* src, const char* dst);
 
 #endif //OMORI_PATCHER_FS_OVERLAY_H

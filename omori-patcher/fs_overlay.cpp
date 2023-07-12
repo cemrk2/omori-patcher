@@ -1,7 +1,8 @@
+#include <map>
+#include <locale>
+#include <string>
+#include <codecvt>
 #include <mutex>
-#include <sail-c++/sail-c++.h>
-#include <sail-c++/image_output-c++.h>
-#include <png.h>
 #include "fs_overlay.h"
 #include "utils.h"
 #include "detours.h"
@@ -16,199 +17,30 @@ std::map<HANDLE, std::wstring> fileMap;
 std::map<HANDLE, _LARGE_INTEGER> filePtrMap;
 std::mutex mapMutex;
 
-void addFileW(const Mod& mod, const wchar_t* pathWCstr)
+std::wstring convert(std::string str)
 {
-    auto path = std::wstring(pathWCstr);
-    auto modDir_cstr = mod.modDir.c_str();
-    size_t modDir_cstrlen = strlen(modDir_cstr) + 1;
-    auto modDir = new wchar_t[modDir_cstrlen];
-    size_t convertedChars = 0;
-    mbstowcs_s(&convertedChars, modDir, modDir_cstrlen, modDir_cstr, _TRUNCATE);
-
-    auto modDirAbsWs = Utils::GetAbsolutePathW((std::wstring(L"mods/") + modDir).c_str());
-    auto modDirAbs = std::wstring(modDirAbsWs);
-
-    if (path.back() == L'\\')
-    {
-        HANDLE handle;
-        WIN32_FIND_DATAW finfo;
-
-        if((handle = FindFirstFileW((path + L"*").c_str(), &finfo)) != INVALID_HANDLE_VALUE)
-        {
-            do {
-                auto name = finfo.cFileName;
-                if (wcscmp(name, L".") == 0 || wcscmp(name, L"..") == 0) {
-                    continue;
-                }
-
-                std::wstring istr = path + name;
-                if ((GetFileAttributesW(istr.c_str()) & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-                    addFileW(mod, (istr + L"\\").c_str());
-                } else {
-                    addFileW(mod, istr.c_str());
-                }
-
-            } while (FindNextFileW(handle, &finfo));
-            FindClose(handle);
-        }
-    }
-    else
-    {
-        auto asset = path.substr(modDirAbs.size()+1, path.size());
-        auto fullBase = Utils::GetAbsolutePathW(asset.c_str());
-        overlay[std::wstring(fullBase)] = path;
-        free((void*) fullBase);
-    }
-
-    free(modDir);
-    free((void*) modDirAbsWs);
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.from_bytes(str);
 }
 
-void addFile(const Mod& mod, const Json::Value& v)
+__declspec(dllexport) void AddFileMap(const char* src, const char* dst)
 {
-    auto asset = v.asString();
-    auto modAsset = "mods/" + mod.modDir + "/" + asset;
-    const char* assetCStr = Utils::GetAbsolutePath(asset.c_str());
-    const char* modAssetCStr = Utils::GetAbsolutePath(modAsset.c_str());
-    size_t assetNewSize = strlen(assetCStr) + 1;
-    size_t modAssetNewSize = strlen(modAssetCStr) + 1;
-    auto assetWCStr = new wchar_t[assetNewSize];
-    auto modAssetWCstr = new wchar_t[modAssetNewSize];
-    size_t convertedChars = 0;
-    mbstowcs_s(&convertedChars, assetWCStr, assetNewSize, assetCStr, _TRUNCATE);
-    mbstowcs_s(&convertedChars, modAssetWCstr, modAssetNewSize, modAssetCStr, _TRUNCATE);
+    auto wide_src = std::wstring(Utils::GetAbsolutePathW(convert(std::string(src)).c_str()));
+    auto wide_dst = std::wstring(Utils::GetAbsolutePathW(convert(std::string(dst)).c_str()));
 
-    if (std::wstring(assetWCStr).back() == L'\\')
-    {
-        HANDLE handle;
-        WIN32_FIND_DATAW finfo;
-
-        if((handle = FindFirstFileW((std::wstring(modAssetWCstr) + L"*").c_str(), &finfo)) != INVALID_HANDLE_VALUE){
-            do{
-                auto name = finfo.cFileName;
-                if (wcscmp(name, L".") == 0 || wcscmp(name, L"..") == 0)
-                {
-                    continue;
-                }
-
-                std::wstring istr = std::wstring(modAssetWCstr) + name;
-                if ((GetFileAttributesW(istr.c_str()) & FILE_ATTRIBUTE_DIRECTORY) != 0)
-                {
-                    addFileW(mod, (istr + L"\\").c_str());
-                }
-                else
-                {
-                    addFileW(mod, istr.c_str());
-                }
-
-            }while(FindNextFileW(handle, &finfo));
-            FindClose(handle);
-        }
-    }
-    else
-    {
-        overlay[std::wstring(assetWCStr)] = modAssetWCstr;
-    }
-    free((void*) assetCStr);
-    free((void*) assetWCStr);
-    free((void*) modAssetCStr);
-    free((void*) modAssetWCstr);
+    overlay.insert(std::pair(wide_src, wide_dst));
 }
 
-// https://gist.github.com/dobrokot/10486786
-static void PngWriteCallback(png_structp  png_ptr, png_bytep data, png_size_t length) {
-    auto* p = (std::vector<uint8_t>*)png_get_io_ptr(png_ptr);
-    p->insert(p->end(), data, data + length);
-}
-
-bool WritePngToMemory(size_t w, size_t h, const void* dataRGBA, std::vector<uint8_t> *out) {
-    out->clear();
-    png_structp p = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if(!p)
-    {
-        Utils::Error("png_create_write_struct() failed");
-        return false;
-    }
-
-    png_infop info_ptr = png_create_info_struct(p);
-    if (!info_ptr)
-    {
-        Utils::Error("png_create_info_struct() failed");
-        return false;
-    }
-    if (setjmp(png_jmpbuf(p)) != 0)
-    {
-        Utils::Error("setjmp(png_jmpbuf(p) failed");
-        return false;
-    }
-
-    png_set_IHDR(p, info_ptr, w, h, 8,
-                 PNG_COLOR_TYPE_RGBA,
-                 PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_DEFAULT,
-                 PNG_FILTER_TYPE_DEFAULT);
-    std::vector<uint8_t*> rows(h);
-    for (size_t y = 0; y < h; ++y)
-        rows[y] = (uint8_t*)dataRGBA + y * w * 4;
-    png_set_rows(p, info_ptr, &rows[0]);
-    png_set_write_fn(p, out, PngWriteCallback, NULL);
-    png_write_png(p, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
-
-    png_destroy_write_struct(&p, NULL);
-
-    return true;
-}
-
-void addOLID(const Mod& mod, const Json::Value& deltaObj)
+__declspec(dllexport) void AddBinFile(const char* path, size_t size, void* bin)
 {
-    std::string target = deltaObj["patch"].asString();
-    std::string patch = "mods\\" + mod.modDir + "\\" + deltaObj["with"].asString();
-    const char* targetCStr = Utils::GetAbsolutePath(target.c_str());
-    size_t targetSize = strlen(targetCStr) + 1;
-    auto targetWStr = new wchar_t[targetSize];
-    size_t convertedChars = 0;
-    mbstowcs_s(&convertedChars, targetWStr, targetSize, targetCStr, _TRUNCATE);
-    auto olid = Utils::ReadFileData(patch.c_str());
+    auto wide_path = std::wstring(Utils::GetAbsolutePathW(convert(std::string(path)).c_str()));
+    void* cpy = malloc(size);
+    memcpy(cpy, bin, size); // This is done to make sure that the data doesn't get accidentalyl gc'd
 
-    sail::image image(target);
-    std::vector<uint8_t> imgVec(0);
-    image.convert(SAIL_PIXEL_FORMAT_BPP32_RGBA);
-
-    WritePngToMemory(image.width(), image.height(), image.pixels(), &imgVec);
-
-    auto* buff = (uint8_t*) malloc(imgVec.size());
-    memcpy(buff, imgVec.data(), imgVec.size());
-    binOverlay[std::wstring(targetWStr)] = FileData{
-        buff,
-        imgVec.size()
-    };
-
-    free(targetWStr);
-    free(olid.data);
-}
-
-void FS_RegisterOverlay(const Mod& mod)
-{
-    std::vector<std::string> modKeys = {"assets", "files", "maps", "data"};
-
-    for (const auto & modKey : modKeys)
-    {
-        auto arr = mod.files.get(modKey, {});
-        for (const auto& v : arr)
-        {
-            addFile(mod, v);
-        }
-    }
-
-    auto image_deltas = mod.rawConfig.get("image_deltas", {});
-    if (!image_deltas.empty())
-    {
-        for (const Json::Value& delta : image_deltas)
-        {
-            addOLID(mod, delta);
-        }
-    }
-
+    binOverlay.insert(std::pair(wide_path, FileData{
+        (BYTE*) cpy,
+        size
+    }));
 }
 
 BOOL WINAPI hookedSetFilePointerEx(HANDLE hFile, _LARGE_INTEGER liDistanceToMove, PLARGE_INTEGER lpNewFilePointer, DWORD dwMoveMethod)
@@ -231,7 +63,7 @@ BOOL WINAPI hookedSetFilePointerEx(HANDLE hFile, _LARGE_INTEGER liDistanceToMove
                 *lpNewFilePointer = filePtrMap[hFile];
                 break;
             default:
-                Utils::Warnf("Unsupported setFilePointerEx move method: %d", dwMoveMethod);
+                Warnf("Unsupported setFilePointerEx move method: %d", dwMoveMethod);
         }
         return true;
     }
@@ -263,7 +95,7 @@ BOOL WINAPI hookedReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesTo
     {
         if (lpOverlapped != nullptr)
         {
-            Utils::Warn("lpOverlapped != nullptr on an overlayed file, thinks might break");
+            Warn("lpOverlapped != nullptr on an overlayed file, thinks might break");
         }
         size_t len = nNumberOfBytesToRead;
         size_t offset = filePtrMap[hFile].QuadPart;

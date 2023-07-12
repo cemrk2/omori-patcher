@@ -362,8 +362,17 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# Clion
+# IDEs
 .idea
+.vscode
 
 # CMake
 cmake-build-debug
+build
+
+# OMORI
+OMORI
+
+# Native binaries
+omori-patcher.dll
+ml.dll
