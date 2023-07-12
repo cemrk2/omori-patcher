@@ -5,7 +5,6 @@ import std/tables
 import binstreams
 import modloader
 import jsonpatch
-import streams
 import utils
 import olid
 import json
@@ -59,7 +58,9 @@ proc registerFile(m : Mod, file : string, file2 : string, fileType : FileType) =
             AddBinFile(cstring(file[0 .. len(file)-2]), csize_t(len(newSrc)), cast[pointer](newSrc))
         of OLID:
             var olidH = open(fmt"{m.path}/{file2}")
-            applyOLID(file2, file, binstreams.newFileStream(olidH, bigEndian))
+            Info(fmt"olid: {file} {file2}")
+            var applied = applyOLID(file2, file, binstreams.newFileStream(olidH, bigEndian))
+            AddBinFile(cstring(file[0 .. len(file)-1]), csize_t(len(applied)), cast[pointer](applied.cstring))
 
 
 proc RegisterOverlayedFiles(mods : seq[Mod]) =
