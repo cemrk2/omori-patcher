@@ -17,10 +17,13 @@ std::map<HANDLE, std::wstring> fileMap;
 std::map<HANDLE, _LARGE_INTEGER> filePtrMap;
 std::mutex mapMutex;
 
+// https://gist.github.com/rosasurfer/33f0beb4b10ff8a8c53d943116f8a872
 std::wstring convert(std::string str)
 {
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    return converter.from_bytes(str);
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+	std::wstring wstrTo(size_needed, 0);
+	MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+	return wstrTo;
 }
 
 __declspec(dllexport) void AddFileMap(const char* src, const char* dst)
@@ -101,9 +104,9 @@ BOOL WINAPI hookedReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesTo
         size_t offset = filePtrMap[hFile].QuadPart;
         if (len + offset > binOverlay[filename].size) len = len + offset - binOverlay[filename].size;
         filePtrMap[hFile].QuadPart += nNumberOfBytesToRead;
-        if (filePtrMap[hFile].QuadPart >= binOverlay[filename].size) filePtrMap[hFile].QuadPart = len;
+        if ((size_t)filePtrMap[hFile].QuadPart >= binOverlay[filename].size) filePtrMap[hFile].QuadPart = len;
         memcpy(lpBuffer, binOverlay[filename].data+offset, len);
-        *lpNumberOfBytesRead = len;
+        *lpNumberOfBytesRead = (DWORD)len;
         return true;
     }
     return trueReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
