@@ -4,6 +4,7 @@ import modloader
 import utils
 import os
 import fs
+import js
 
 var mods : seq[Mod]
 
@@ -36,7 +37,9 @@ proc MlMain() {.stdcall, exportc, dynlib.} =
       mlMain()
     except CatchableError:
       Error(getCurrentExceptionMsg())
-    
+
+proc JSInit() {.stdcall, exportc, dynlib.} =
+  JSInit_cb(mods)
 
 proc NimMain {.cdecl, importc.}
 

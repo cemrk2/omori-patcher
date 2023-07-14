@@ -45,22 +45,22 @@ namespace js
         auto JS_Eval = (JS_EvalFunc) Consts::JS_Eval;
         JS_Eval(JSContextInst, code, strlen(code), filename, 0);
     }
+}
 
-    /**
-     * Eval wrapper for executing mods
-     * @param code
-     * @param filename
-     */
-    void JS_EvalMod(const char *code, const char *filename = "<omori-patcher>") {
-        char *filenameJS = (char *) malloc(
-                strlen(filename) + 1); // this part of the code is going to come back to haunt me one day
-        memcpy(filenameJS, filename, strlen(filename) + 1);
-        for (size_t i = 0; i < strlen(filenameJS); i++) {
-            if (filenameJS[i] == '\\') filenameJS[i] = '/';
-            if (filenameJS[i] == '\'') filenameJS[i] = '"';
-        }
-        JS_Eval((string("try { (()=>{ \n") + code + "\n })(); } catch(ex){ print('Failed to run script: " + filenameJS +
-                 "'); console.error(ex); }").c_str(), filename);
-        free(filenameJS);
+/**
+ * Eval wrapper for executing mods
+ * @param code
+ * @param filename
+ */
+__declspec(dllexport) void JS_EvalMod(const char *code, const char *filename) {
+    char *filenameJS = (char *) malloc(
+            strlen(filename) + 1); // this part of the code is going to come back to haunt me one day
+    memcpy(filenameJS, filename, strlen(filename) + 1);
+    for (size_t i = 0; i < strlen(filenameJS); i++) {
+        if (filenameJS[i] == '\\') filenameJS[i] = '/';
+        if (filenameJS[i] == '\'') filenameJS[i] = '"';
     }
+    js::JS_Eval((string("try { (()=>{ \n") + code + "\n })(); } catch(ex){ print('Failed to run script: " + filenameJS +
+                "'); console.error(ex); }").c_str(), filename);
+    free(filenameJS);
 }

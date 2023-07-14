@@ -10,6 +10,8 @@
 #define JS_VALUE_GET_PTR(v) (void *)((intptr_t)(v) & ~0xf)
 #define JS_VALUE_GET_OBJ(v) ((JSObject *)JS_VALUE_GET_PTR(v))
 
+__declspec(dllexport) void JS_EvalMod(const char* code, const char *filename);
+
 namespace js
 {
     struct ChowJSFunction
@@ -48,7 +50,6 @@ namespace js
     JSValue JS_GetGlobalVar(JSContext* ctx, JSAtom prop, bool throw_ref_error);
     JSAtom JS_NewAtom(JSContext* ctx, const char* str, size_t len);
     void JS_Eval(const char* code, const char *filename);
-    void JS_EvalMod(const char* code, const char *filename);
 }
 
 #endif //OMORI_PATCHER_JS_H

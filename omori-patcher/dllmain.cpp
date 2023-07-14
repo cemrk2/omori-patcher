@@ -69,6 +69,13 @@ void PostEvalBinHook()
 
     Info("Initializing omori-patcher stdlib");
     js::JS_Eval(Utils::ReadFileStr("stdlib.js"), "stdlib.js");
+    auto JSInit = GetProcAddress(modHandle, "JSInit");
+    Infof("JSInit: %p", JSInit);
+    if (JSInit == 0 || JSInit == INVALID_HANDLE_VALUE) {
+        Error("Failed to find JSInit!");
+        return;
+    }
+    JSInit();
 }
 
 void PatcherMain()
