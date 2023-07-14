@@ -112,117 +112,61 @@ __declspec(dllexport) void Errorf(const char* format, ...)
 
 namespace Utils
 {
-    // https://stackoverflow.com/questions/311955/redirecting-cout-to-a-console-in-windows
-    void BindCrtHandlesToStdHandles(bool bindStdIn, bool bindStdOut, bool bindStdErr)
+    void rebindHandle(DWORD targetStream)
     {
-        // Re-initialize the C runtime "FILE" handles with clean handles bound to "nul". We do this because it has been
-        // observed that the file number of our standard handle file objects can be assigned internally to a value of -2
-        // when not bound to a valid target, which represents some kind of unknown internal invalid state. In this state our
-        // call to "_dup2" fails, as it specifically tests to ensure that the target file number isn't equal to this value
-        // before allowing the operation to continue. We can resolve this issue by first "re-opening" the target files to
-        // use the "nul" device, which will place them into a valid state, after which we can redirect them to our target
-        // using the "_dup2" function.
-        if (bindStdIn)
-        {
-            FILE* dummyFile;
-            freopen_s(&dummyFile, "nul", "r", stdin);
-        }
-        if (bindStdOut)
-        {
-            FILE* dummyFile;
-            freopen_s(&dummyFile, "nul", "w", stdout);
-        }
-        if (bindStdErr)
-        {
-            FILE* dummyFile;
-            freopen_s(&dummyFile, "nul", "w", stderr);
-        }
+        HANDLE stdHandle = GetStdHandle(targetStream);
+        if (stdHandle != INVALID_HANDLE_VALUE) {
+            int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
+            if (fileDescriptor != -1) {
+                const char* mode = targetStream == STD_INPUT_HANDLE ? "r" : "w";
+                FILE* file = _fdopen(fileDescriptor, mode);
+                if (file != nullptr) {
+                    int targetNo;
+                    switch (targetStream) {
+                        case STD_INPUT_HANDLE:
+                            targetNo = _fileno(stdin);
+                            break;
+                        
+                        case STD_OUTPUT_HANDLE:
+                            targetNo = _fileno(stdout);
+                            break;
 
-        // Redirect unbuffered stdin from the current standard input handle
-        if (bindStdIn)
-        {
-            HANDLE stdHandle = GetStdHandle(STD_INPUT_HANDLE);
-            if (stdHandle != INVALID_HANDLE_VALUE)
-            {
-                int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
-                if (fileDescriptor != -1)
-                {
-                    FILE* file = _fdopen(fileDescriptor, "r");
-                    if (file != nullptr)
-                    {
-                        int dup2Result = _dup2(_fileno(file), _fileno(stdin));
-                        if (dup2Result == 0)
-                        {
-                            setvbuf(stdin, nullptr, _IONBF, 0);
-                        }
+                        case STD_ERROR_HANDLE:
+                            targetNo = _fileno(stderr);
+                            break;
+                        
+                        default:
+                            break;
+                    }
+                    int dup2Result = _dup2(_fileno(file), targetNo);
+                    if (dup2Result == 0) {
+                        setvbuf(stdin, nullptr, _IONBF, 0);
                     }
                 }
             }
         }
+    }
 
-        // Redirect unbuffered stdout to the current standard output handle
-        if (bindStdOut)
-        {
-            HANDLE stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (stdHandle != INVALID_HANDLE_VALUE)
-            {
-                int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
-                if (fileDescriptor != -1)
-                {
-                    FILE* file = _fdopen(fileDescriptor, "w");
-                    if (file != nullptr)
-                    {
-                        int dup2Result = _dup2(_fileno(file), _fileno(stdout));
-                        if (dup2Result == 0)
-                        {
-                            setvbuf(stdout, nullptr, _IONBF, 0);
-                        }
-                    }
-                }
-            }
-        }
+    // https://stackoverflow.com/questions/311955/redirecting-cout-to-a-console-in-windows
+    void BindCrtHandlesToStdHandles()
+    {
+        FILE* dummyFile;
+        freopen_s(&dummyFile, "nul", "r", stdin);
+        freopen_s(&dummyFile, "nul", "w", stdout);
+        freopen_s(&dummyFile, "nul", "w", stderr);
 
-        // Redirect unbuffered stderr to the current standard error handle
-        if (bindStdErr)
-        {
-            HANDLE stdHandle = GetStdHandle(STD_ERROR_HANDLE);
-            if (stdHandle != INVALID_HANDLE_VALUE)
-            {
-                int fileDescriptor = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
-                if (fileDescriptor != -1)
-                {
-                    FILE* file = _fdopen(fileDescriptor, "w");
-                    if (file != nullptr)
-                    {
-                        int dup2Result = _dup2(_fileno(file), _fileno(stderr));
-                        if (dup2Result == 0)
-                        {
-                            setvbuf(stderr, nullptr, _IONBF, 0);
-                        }
-                    }
-                }
-            }
-        }
+        rebindHandle(STD_INPUT_HANDLE);
+        rebindHandle(STD_OUTPUT_HANDLE);
+        rebindHandle(STD_ERROR_HANDLE);
 
-        // Clear the error state for each of the C++ standard stream objects. We need to do this, as attempts to access the
-        // standard streams before they refer to a valid target will cause the iostream objects to enter an error state. In
-        // versions of Visual Studio after 2005, this seems to always occur during startup regardless of whether anything
-        // has been read from or written to the targets or not.
-        if (bindStdIn)
-        {
-            std::wcin.clear();
-            std::cin.clear();
-        }
-        if (bindStdOut)
-        {
-            std::wcout.clear();
-            std::cout.clear();
-        }
-        if (bindStdErr)
-        {
-            std::wcerr.clear();
-            std::cerr.clear();
-        }
+        std::wcin.clear();
+        std::cin.clear();
+
+        std::wcout.clear();
+        std::cout.clear();
+
+        std::wcerr.clear();
+        std::cerr.clear();
     }
     
     bool PathExists(const char* path)

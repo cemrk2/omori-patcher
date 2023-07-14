@@ -83,7 +83,7 @@ void PatcherMain()
     SetConsoleTitle(L"OMORI Patcher Logs");
 
     // Restore stdout, stderr and stdin
-    Utils::BindCrtHandlesToStdHandles(true, true, true);
+    Utils::BindCrtHandlesToStdHandles();
 
     Success("DLL Successfully loaded!");
 

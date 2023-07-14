@@ -20,7 +20,7 @@ __declspec(dllexport) void Errorf(const char* msg, ...);
 
 namespace Utils
 {
-	void BindCrtHandlesToStdHandles(bool bindStdIn, bool bindStdOut, bool bindStdErr);
+	void BindCrtHandlesToStdHandles();
     bool PathExists(const char* filename);
     FileData ReadFileData(const char* filename);
     char* ReadFileStr(const char* filename);
