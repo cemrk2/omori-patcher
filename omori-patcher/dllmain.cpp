@@ -16,13 +16,11 @@ static HMODULE modHandle;
 
 void JS_NewCFunctionHook(JSContext* ctx, void* function, char* name, int length)
 {
-    if (name != nullptr && *name != 0)
-    {
-        if (!js::chowFuncs.contains(std::string(name)))
-        {
+    if (name != nullptr && *name != 0) {
+        if (!js::chowFuncs.contains(std::string(name))) {
             js::chowFuncs.insert(std::make_pair(std::string(name), js::ChowJSFunction {
-                    function,
-                    length
+                function,
+                length
             }));
         }
         // Infof("[NewCFunction] JSContext* ctx = 0x%p, function*=%p, name*=%p, name=%s, length=%d", ctx, function, name, name, length);
@@ -41,23 +39,19 @@ void PrintHook(char* msg)
     const char* warn = "console.warn: ";
     const char* err = "console.error: ";
     // TODO(nemtudom345): This is really hacky, but I can not for the life of me get a native c function to register
-    if (strncmp("<omori-patcher>: ", msg, strlen("<omori-patcher>: ")) == 0)
-    {
+    if (strncmp("<omori-patcher>: ", msg, strlen("<omori-patcher>: ")) == 0) {
         rpc::ParseMessage(msg + strlen("<omori-patcher>: "));
         return;
     }
-    if (strncmp(log, msg, strlen(log)) == 0)
-    {
+    if (strncmp(log, msg, strlen(log)) == 0) {
         Infof("[console.log] %s", msg+strlen(log));
         return;
     }
-    if (strncmp(warn, msg, strlen(warn)) == 0)
-    {
+    if (strncmp(warn, msg, strlen(warn)) == 0) {
         Warnf("[console.warn] %s", msg+strlen(warn));
         return;
     }
-    if (strncmp(err, msg, strlen(err)) == 0)
-    {
+    if (strncmp(err, msg, strlen(err)) == 0) {
         Errorf("[console.error] %s", msg+strlen(err));
         return;
     }
@@ -98,8 +92,7 @@ void PatcherMain()
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     FS_RegisterDetours();
-    if (DetourTransactionCommit() != NO_ERROR)
-    {
+    if (DetourTransactionCommit() != NO_ERROR) {
         Error("Failed to patch win32 functions");
         return;
     }
@@ -124,8 +117,7 @@ void PatcherMain()
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
-    if (ul_reason_for_call == DLL_PROCESS_ATTACH)
-    {
+    if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
         PatcherMain();
     }
     return TRUE;

@@ -53,8 +53,7 @@ namespace Mem
         void* old = (void*) mallocI;
         VirtualProtect(old, size, PAGE_EXECUTE_READWRITE, &_);
         mallocI += size;
-        if (mallocI > Consts::codecaveEnd)
-        {
+        if (mallocI > Consts::codecaveEnd) {
             Error("codecaveAlloc: No more free space in codecave");
             return nullptr;
         }
@@ -71,8 +70,7 @@ namespace Mem
     {
         size_t i = 0;
 
-        for (BYTE* reader; i < alignTo; i += codeLength(reader))
-        {
+        for (BYTE* reader; i < alignTo; i += codeLength(reader)) {
             reader = (BYTE*)(insn + i);
         }
         return i;
@@ -96,8 +94,7 @@ namespace Mem
 
         zasm::Serializer serializer{};
         auto res = serializer.serialize(program, (int64_t) targetInsn+offset);
-        if (res != zasm::Error::None)
-        {
+        if (res != zasm::Error::None) {
             Errorf("createCall: Failed to serialize program %s", getErrorName(res));
             return {nullptr, nullptr, 0, 0};
         }
@@ -114,12 +111,11 @@ namespace Mem
         memcpy((void*) (targetInsn+offset), serializer.getCode(), size);
         Infof("%p+%d (%d %d)", targetInsn, offset, size, padding);
 
-        return HookResult
-        {
-                nullptr,
-                backup,
-                size,
-                padding
+        return HookResult {
+            nullptr,
+            backup,
+            size,
+            padding
         };
     }
 
@@ -189,8 +185,7 @@ namespace Mem
 
         zasm::Serializer serializer{};
         auto res = serializer.serialize(program, (int64_t) mallocI);
-        if (res != zasm::Error::None)
-        {
+        if (res != zasm::Error::None) {
             Errorf("HookOnce: Failed to serialize program %s", getErrorName(res));
             return {nullptr, nullptr, 0, 0};
         }
@@ -215,15 +210,13 @@ namespace Mem
         asmCallback(cbA);
         zasm::Serializer cbSerializer{};
         auto cbRes = cbSerializer.serialize(cbProgram, (int64_t) mallocI);
-        if (cbRes != zasm::Error::None)
-        {
+        if (cbRes != zasm::Error::None) {
             Errorf("HookAssembly: Failed to serialize program %s", getErrorName(cbRes));
             return;
         }
 
         void* cbAsmPtr = nullptr;
-        if (cbSerializer.getCodeSize() > 0)
-        {
+        if (cbSerializer.getCodeSize() > 0) {
             cbAsmPtr = codecaveAlloc(cbSerializer.getCodeSize());
             memcpy(cbAsmPtr, cbSerializer.getCode(), cbSerializer.getCodeSize());
         }
@@ -249,8 +242,7 @@ namespace Mem
 
         zasm::Serializer serializer{};
         auto res = serializer.serialize(program, (int64_t) mallocI);
-        if (res != zasm::Error::None)
-        {
+        if (res != zasm::Error::None) {
             Errorf("Hook: Failed to serialize program %s", getErrorName(res));
             return;
         }

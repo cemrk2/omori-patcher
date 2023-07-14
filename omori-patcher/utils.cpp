@@ -178,8 +178,7 @@ namespace Utils
     {
         OFSTRUCT finfo;
         auto handle = (HANDLE) OpenFile(filename, &finfo, OF_READ);
-        if (handle == nullptr)
-        {
+        if (handle == nullptr) {
             Errorf("Failed to open file for reading: %s", filename);
             return {
                 nullptr,
@@ -190,8 +189,7 @@ namespace Utils
         DWORD size = GetFileSize(handle, nullptr);
         void* buffer = malloc(size);
 
-        if (!ReadFile(handle, buffer, size, nullptr, nullptr))
-        {
+        if (!ReadFile(handle, buffer, size, nullptr, nullptr)) {
             Errorf("Failed to read file: %s", filename);
             return {
                     nullptr,
@@ -218,26 +216,20 @@ namespace Utils
 
     bool WriteFileData(const char* filename, void* data, size_t dataLen, bool replaceExisting)
     {
-        if (Utils::PathExists(filename))
-        {
-            if (replaceExisting)
-            {
+        if (Utils::PathExists(filename)) {
+            if (replaceExisting) {
                 DeleteFileA(filename);
-            }
-            else
-            {
+            } else {
                 return true;
             }
         }
         auto handle = (HANDLE) CreateFileA(filename, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-        if (handle == nullptr)
-        {
+        if (handle == nullptr) {
             Errorf("Failed to open file for writing: %s", filename);
             return false;
         }
 
-        if (!WriteFile(handle, data, dataLen, NULL, NULL))
-        {
+        if (!WriteFile(handle, data, dataLen, NULL, NULL)) {
             Errorf("Failed to write data to file: %s", filename);
         }
 

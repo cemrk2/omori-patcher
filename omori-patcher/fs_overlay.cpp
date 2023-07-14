@@ -40,7 +40,7 @@ __declspec(dllexport) void AddBinFile(const char* path, size_t size, void* bin)
     void* cpy = malloc(size);
     memcpy(cpy, bin, size); // This is done to make sure that the data doesn't get accidentalyl gc'd
 
-    binOverlay.insert(std::pair(wide_path, FileData{
+    binOverlay.insert(std::pair(wide_path, FileData {
         (BYTE*) cpy,
         size
     }));
@@ -50,8 +50,7 @@ BOOL WINAPI hookedSetFilePointerEx(HANDLE hFile, _LARGE_INTEGER liDistanceToMove
 {
     std::lock_guard<std::mutex> lock(mapMutex);
     auto filename = fileMap[hFile];
-    if (binOverlay.contains(filename))
-    {
+    if (binOverlay.contains(filename)) {
         if (!filePtrMap.contains(hFile)) filePtrMap[hFile] = _LARGE_INTEGER{};
         switch (dwMoveMethod) {
             case FILE_BEGIN:
@@ -77,12 +76,10 @@ HANDLE WINAPI hookedCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD
 {
     std::lock_guard<std::mutex> lock(mapMutex);
     HANDLE handle;
-    if (overlay.contains(Utils::GetAbsolutePathW(lpFileName)))
-    {
+    if (overlay.contains(Utils::GetAbsolutePathW(lpFileName))) {
         handle = trueCreateFileW(overlay[Utils::GetAbsolutePathW(lpFileName)].c_str(), dwDesiredAccess, dwShareMode,
                                  lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-    }
-    else {
+    } else {
         handle = trueCreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
                                  dwFlagsAndAttributes, hTemplateFile);
     }
@@ -94,10 +91,8 @@ BOOL WINAPI hookedReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesTo
 {
     std::lock_guard<std::mutex> lock(mapMutex);
     auto filename = fileMap[hFile];
-    if (binOverlay.contains(filename))
-    {
-        if (lpOverlapped != nullptr)
-        {
+    if (binOverlay.contains(filename)) {
+        if (lpOverlapped != nullptr) {
             Warn("lpOverlapped != nullptr on an overlayed file, thinks might break");
         }
         size_t len = nNumberOfBytesToRead;
