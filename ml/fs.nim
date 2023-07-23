@@ -18,28 +18,9 @@ proc AddFileMap(src : cstring, dst : cstring) : void {.importc: "?AddFileMap@@YA
 proc AddBinFile(path : cstring, size : csize_t, data : pointer) {.importc: "?AddBinFile@@YAXPEBD_KPEAX@Z", dynlib: "omori-patcher.dll".}
 
 proc applyJsond(src : string, jsond : string) : string =
-    let srcDoc = json.parseJson(src)
-    let jsondDoc = json.parseJson(jsond)
-    var deltas : seq[Operation]
-    var newDoc = srcDoc
-    for deltaPatch in jsondDoc:
-        let op = deltaPatch["op"].getStr()
-
-        case op:
-            of "add":
-                deltas.add(newAddOperation(deltaPatch["path"].getStr().toJsonPointer, deltaPatch["value"]))
-            of "remove":
-                deltas.add(newRemoveOperation(deltaPatch["path"].getStr().toJsonPointer))
-            of "replace":
-                deltas.add(newReplaceOperation(deltaPatch["path"].getStr().toJsonPointer, deltaPatch["value"]))
-            of "move":
-                deltas.add(newMoveOperation(deltaPatch["path"].getStr().toJsonPointer, deltaPatch["from"].getStr().toJsonPointer))
-            of "test":
-                deltas.add(newTestOperation(deltaPatch["path"].getStr().toJsonPointer, deltaPatch["value"]))
-            of "copy":
-                deltas.add(newCopyOperation(deltaPatch["path"].getStr().toJsonPointer, deltaPatch["from"].getStr().toJsonPointer))
-    for delta in deltas:
-        newDoc = patch(newDoc, delta)
+    let srcNode = json.parseJson(src)
+    let deltas = json.parseJson(jsond).to(JsonPatch)
+    var newDoc = patch(srcNode, deltas)
     return $newDoc.toJson
 
 proc registerFile(m : Mod, file : string, file2 : string, fileType : FileType) =
