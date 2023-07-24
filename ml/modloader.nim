@@ -21,7 +21,6 @@ type
         olid*: Table[string, string]
         hasMain*: bool
         main*: string
-        mainScript*: string
 
 proc parseMod*(m: var Mod, jsonData : string) =
     m.raw = json.parseJson(jsonData)
@@ -30,7 +29,6 @@ proc parseMod*(m: var Mod, jsonData : string) =
     m.hasMain = m.raw.hasKey("main")
     if m.hasMain:
         m.main = m.path & "/" & m.raw["main"].getStr()
-        m.mainScript = readFile(m.main)
 
     if m.raw.hasKey("image_deltas"):
         for delta in m.raw["image_deltas"]:

@@ -11,7 +11,7 @@ proc JSInit_cb(mods : seq[Mod]) =
     for m in mods:
       if m.hasMain:
         try:
-            JS_EvalMod(m.mainScript, m.main)
+            JS_EvalMod(readFile(m.main), m.main)
         except CatchableError:
             Error(getCurrentExceptionMsg())
 
