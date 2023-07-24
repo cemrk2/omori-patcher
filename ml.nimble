@@ -16,7 +16,7 @@ task x64dbg, "Compiles omori-ml and launches omori with x64dbg":
   exec "nim c -d:debug --cc=vcc --app=lib --cpu=amd64 -o:ml.dll ml/ml.nim"
   exec "cmd /c del ml.lib"
   exec "cmd /c del ml.exp"
-  exec "cmd /c copy ml.dll OMORI\\ml.dll /y && copy ml.pdb OMORI\\ml.pdb /y"
+  exec "cmd /c copy ml.dll OMORI\\ml.dll /y"
   exec "cmd /c cd OMORI && x64dbg %cd%\\OMORI\\OMORI.exe"
 
 task debug, "Compiles omori-ml and launches omori":
@@ -25,7 +25,7 @@ task debug, "Compiles omori-ml and launches omori":
   exec "nim c -d:debug --cc=vcc --app=lib --cpu=amd64 -o:ml.dll ml/ml.nim"
   exec "cmd /c del ml.lib"
   exec "cmd /c del ml.exp"
-  exec "cmd /c copy ml.dll OMORI\\ml.dll /y && copy ml.pdb OMORI\\ml.pdb /y"
+  exec "cmd /c copy ml.dll OMORI\\ml.dll /y"
   exec "cmd /c cd OMORI && OMORI"
 
 task release, "Compiles omori-patcher and ml in release mode":
