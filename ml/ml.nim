@@ -7,8 +7,12 @@ import fs
 import js
 
 var mods : seq[Mod]
+var init = false
 
 proc mlMain() =
+  if init:
+    return
+  init = true
   Success("Nim module initialzied!")
 
   Info("Searching for mods")
@@ -41,9 +45,4 @@ proc MlMain() {.stdcall, exportc, dynlib.} =
 proc JSInit() {.stdcall, exportc, dynlib.} =
   JSInit_cb(mods)
 
-proc NimMain {.cdecl, importc.}
-
-proc DllMain(hinstDLL: HINSTANCE, fdwReason: DWORD, lpvReserved: LPVOID) : BOOL {.stdcall, exportc, dynlib.} =
-  NimMain()
-
-  return true
+MlMain()

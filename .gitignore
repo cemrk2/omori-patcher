@@ -376,3 +376,5 @@ OMORI
 # Native binaries
 omori-patcher.dll
 ml.dll
+ml.lib
+ml.exp

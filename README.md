@@ -16,7 +16,6 @@ You can install omori-patcher either via the [gui installer](https://github.com/
 #### Requirements
 
 - [Microsoft Visual Studio w/ MSVC](https://visualstudio.microsoft.com/downloads/)
-- [MinGW](https://jmeubank.github.io/tdm-gcc/download/)
 - [Nim](https://nim-lang.org/install.html)
 
 ### Dependencies
