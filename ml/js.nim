@@ -6,10 +6,11 @@ import winim/shell
 import modloader
 import utils
 import json
+import os
 
 type
     RPC_ID = enum
-        writeFileEx = 1, mkdirEx = 2, getAsyncKeyState = 3, messageBox = 4, getClipboard = 5
+        readFileEx = 0, writeFileEx = 1, mkdirEx = 2, getAsyncKeyState = 3, messageBox = 4, getClipboard = 5
 
 proc c_JS_EvalMod(code : cstring, filename : cstring) : void {.importc: "?JS_EvalMod@@YAXPEBD0@Z", dynlib: "omori-patcher.dll".}
 
@@ -39,6 +40,19 @@ proc RPC_cb(data: cstring) =
     let data = node["data"]
 
     case (f)
+        of RPC_ID.readFileEx:
+            let fn = data["function"].getStr()
+            let filename = data["filename"].getStr()
+            let data = readFile(filename)
+            JS_EvalMod(fmt"window.{fn}('{JSEscape(filename)}', '{JSEscape(data)}');", "js.nim:RPC_cb")
+        of RPC_ID.writeFileEx:
+            if not data["replace"].getBool() and fileExists(data["filename"].getStr()):
+                return
+            writeFile(data["filename"].getStr(), data["data"].getStr())
+        of RPC_ID.mkdirEx:
+            let dirname = data["dirname"].getStr()
+            if not dirExists(dirname):
+                createDir(dirname)
         of RPC_ID.getAsyncKeyState:
             let fn = data["function"].getStr()
             let keys = data["keys"]
@@ -75,8 +89,5 @@ proc RPC_cb(data: cstring) =
                     GlobalUnlock(hClipboardData)
             CloseClipboard()
             JS_EvalMod(fmt"window.{fn}('{JSEscape(clipboardType)}', '{JSEscape(clipboardData)}');", "js.nim:RPC_cb")
-
-        else:
-            Error(fmt"Unimplemented rpc function({f}): {$node.toJson()}")
 
 export JS_EvalMod, RPC_cb, JSInit_cb

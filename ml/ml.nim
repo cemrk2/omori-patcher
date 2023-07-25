@@ -46,6 +46,9 @@ proc JSInit() {.stdcall, exportc, dynlib.} =
   JSInit_cb(mods)
 
 proc RPC(data: cstring) {.stdcall, exportc, dynlib.} =
-  RPC_cb(data)
+  try:
+    RPC_cb(data)
+  except CatchableError as e:
+    Error(e.msg)
 
 MlMain()
