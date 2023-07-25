@@ -35,6 +35,7 @@ void JS_EvalBinHook(JSContext* ctx, char* filename)
 void PrintHook(char* msg)
 {
     if (strncmp("console.log: getImage", msg, strlen("console.log: getImage")) == 0) return;
+    if (strncmp("console.log: fired:", msg, strlen("console.log: fired:")) == 0) return;
     const char* log = "console.log: ";
     const char* warn = "console.warn: ";
     const char* err = "console.error: ";

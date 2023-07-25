@@ -1,6 +1,7 @@
 console.log('stdlib: initializing');
 
 try {
+	let cb_i = 0;
 	function rpc(funcId, data) {
 		const obj = { 'func': funcId, 'data': data };
 		const jsonTxt = JSON.stringify(obj);
@@ -22,36 +23,15 @@ try {
 		};
 		rpc(2, data);
 	}
-	
-	function mp_pre(name, cbName) {
+
+	function GetAsyncKeyState(keycodes, cb) {
+		cb_i++;
+		window[`ml_callback_${cb_i}`] = cb;
 		const data = {
-			'name': name,
-			'callback': cbName
-		};
+			'keys': keycodes,
+			'function': `ml_callback_${cb_i}`
+		}
 		rpc(3, data);
-	}
-	
-	function mp_replace(name, cbName) {
-		const data = {
-			'name': name,
-			'callback': cbName
-		};
-		rpc(4, data);
-	}
-	
-	function mp_post(name, cbName) {
-		const data = {
-			'name': name,
-			'callback': cbName
-		};
-		rpc(5, data);
-	}
-	
-	function mp_commit(name) {
-		const data = {
-			'name': name
-		};
-		rpc(6, data);
 	}
 	
 	console.log('stdlib: initialized');

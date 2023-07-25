@@ -45,4 +45,7 @@ proc MlMain() {.stdcall, exportc, dynlib.} =
 proc JSInit() {.stdcall, exportc, dynlib.} =
   JSInit_cb(mods)
 
+proc RPC(data: cstring) {.stdcall, exportc, dynlib.} =
+  RPC_cb(data)
+
 MlMain()
