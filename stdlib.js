@@ -1,6 +1,7 @@
 console.log('stdlib: initializing');
 
 try {
+	globalThis.rpc_callbacks = {};
 	const RPC_ID = {
 		'readFileEx': 0,
 		'writeFileEx': 1,
@@ -22,14 +23,29 @@ try {
 		print('<omori-patcher>: ' + jsonTxt);
 	}
 
+	function rpc_cb(cb) {
+		const cb_str = cb.toString();
+		let hash = 0, i, chr;
+		if (cb_str.length === 0) return hash;
+		for (i = 0; i < cb_str.length; i++) {
+			chr = cb_str.charCodeAt(i);
+			hash = ((hash << 5) - hash) + chr;
+			hash |= 0;
+		}
+		const hash_str = hash < 0 ? `n${Math.abs(hash)}` : `p${hash}`;
+		globalThis.rpc_callbacks[hash_str] = cb;
+
+		return hash_str;
+	}
+
 	/**
 	 * @param {string} filename
-	 * @param {string} cb_name
+	 * @param {Function} cb
 	 */
-	function readFileEx(filename, cb_name) {
+	function readFileEx(filename, cb) {
 		const data = {
 			'filename': filename,
-			'function': cb_name
+			'function': rpc_cb(cb)
 		};
 		rpc(RPC_ID.readFileEx, data);
 	}
@@ -88,12 +104,12 @@ try {
 	/**
 	 * @returns {boolean[]}
 	 * @param {number[]} keycodes
-	 * @param {string} cb_name
+	 * @param {Function} cb
 	 */
-	function getAsyncKeyState(keycodes, cb_name) {
+	function getAsyncKeyState(keycodes, cb) {
 		const data = {
 			'keys': keycodes,
-			'function': cb_name
+			'function': rpc_cb(cb)
 		}
 		rpc(RPC_ID.getAsyncKeyState, data);
 	}
@@ -111,11 +127,11 @@ try {
 	}
 
 	/**
-	 * @param {string} cb_name
+	 * @param {Function} cb
 	 */
-	function getClipboard(cb_name) {
+	function getClipboard(cb) {
 		const data = {
-			'function': cb_name
+			'function': rpc_cb(cb)
 		}
 		rpc(RPC_ID.getClipboard, data);
 	}

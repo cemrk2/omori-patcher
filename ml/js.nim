@@ -44,7 +44,7 @@ proc RPC_cb(data: cstring) =
             let fn = data["function"].getStr()
             let filename = data["filename"].getStr()
             let data = readFile(filename)
-            JS_EvalMod(fmt"window.{fn}('{JSEscape(filename)}', '{JSEscape(data)}');", "js.nim:RPC_cb")
+            JS_EvalMod(fmt"globalThis.rpc_callbacks.{fn}('{JSEscape(filename)}', '{JSEscape(data)}');", "js.nim:RPC_cb")
         of RPC_ID.writeFileEx:
             if not data["replace"].getBool() and fileExists(data["filename"].getStr()):
                 return
@@ -59,7 +59,7 @@ proc RPC_cb(data: cstring) =
             var states: seq[bool]
             for key in keys:
                 states.add(GetAsyncKeyState(int32(key.getInt())) != 0)
-            JS_EvalMod(fmt"window.{fn}({$states.toJson()});", "js.nim:RPC_cb")
+            JS_EvalMod(fmt"globalThis.rpc_callbacks.{fn}({$states.toJson()});", "js.nim:RPC_cb")
 
         of RPC_ID.messageBox:
             MessageBoxA(0, data["body"].getStr(), data["title"].getStr(), 0)
@@ -88,6 +88,6 @@ proc RPC_cb(data: cstring) =
                     clipboardType = "text"
                     GlobalUnlock(hClipboardData)
             CloseClipboard()
-            JS_EvalMod(fmt"window.{fn}('{JSEscape(clipboardType)}', '{JSEscape(clipboardData)}');", "js.nim:RPC_cb")
+            JS_EvalMod(fmt"globalThis.rpc_callbacks.{fn}('{JSEscape(clipboardType)}', '{JSEscape(clipboardData)}');", "js.nim:RPC_cb")
 
 export JS_EvalMod, RPC_cb, JSInit_cb
